@@ -494,10 +494,10 @@ function toast(msg, type='info') {
 ══════════════════════════════════════════════════ */
 function addDemoPlayers() {
   const demos = [
-    { name: 'Alice', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Bob', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Nusrat', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Likhon', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
     { name: 'Rafi', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
-    { name: 'Sadia', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Anisur', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
   ];
   demos.forEach(d => {
     const u = { name: d.name, results: {} };
