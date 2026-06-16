@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JS AnisOJ — JavaScript Online Judge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header id="header">
+  <a class="logo" href="#">
+    <div class="logo-icon">OJ</div>
+    JS <span>AnisOJ</span>
+  </a>
+
+  <div class="header-center">
+    <div class="timer-box">
+      <i class="fas fa-clock"></i>
+      <span id="timer">02:00:00</span>
+    </div>
+    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>Live JS Contest</div>
+  </div>
+
+  <div class="header-right">
+    <div class="score-chip">
+      <div class="dot"></div>
+      <span>Score:</span>
+      <span id="total-score">0/10</span>
+    </div>
+    <button id="theme-btn" title="Toggle theme">
+      <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main id="main">
+
+  <!-- LEFT: Questions -->
+  <aside id="col-questions">
+    <div class="col-header">
+      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems</span>
+      <span class="q-progress" id="q-progress">0 / 10</span>
+    </div>
+    <div class="q-list" id="q-list"></div>
+  </aside>
+
+  <!-- MIDDLE: Editor -->
+  <section id="col-editor">
+    <div class="editor-top">
+      <span id="q-display-title">← Select a problem</span>
+      <div class="editor-actions">
+        <button class="btn btn-ghost" id="btn-reset" title="Reset code">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+        <button class="btn btn-ghost" id="btn-run" title="Run without submit">
+          <i class="fas fa-play"></i> Run
+        </button>
+        <span id="q-badge-display"></span>
+      </div>
+    </div>
+
+    <!-- Question description -->
+    <div id="q-description">
+      <div class="empty-state">
+        <i class="fas fa-code"></i>
+        <p>Select a problem from the left panel to start coding</p>
+      </div>
+    </div>
+
+    <!-- Code Editor -->
+    <div id="editor-wrap">
+      <textarea id="code-editor"></textarea>
+    </div>
+
+    <!-- Output Panel -->
+    <div id="output-panel">
+      <div class="output-header">
+        <span class="output-title"><i class="fas fa-terminal" style="margin-right:5px;"></i>Output</span>
+        <div class="output-tabs">
+          <button class="tab-btn active" data-tab="results">Test Results</button>
+          <button class="tab-btn" data-tab="console">Console</button>
+        </div>
+      </div>
+      <div id="output-area">
+        <div class="empty-state" style="height:80px;">
+          <p>Run or Submit to see results</p>
+        </div>
+      </div>
+      <div class="submit-row">
+        <span id="verdict"></span>
+        <button class="btn-submit" id="btn-submit" disabled>
+          <i class="fas fa-paper-plane"></i> Submit
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: Leaderboard -->
+  <aside id="col-leaderboard">
+    <div id="lb-resizer"></div>
+    <div class="lb-inner">
+      <div class="col-header" style="padding-right:10px;">
+        <span class="col-title"><i class="fas fa-ranking-star" style="margin-right:6px;"></i>Leaderboard</span>
+        <span style="font-size:0.7rem;color:var(--text3);" id="lb-participants">0 users</span>
+      </div>
+      <div class="username-row">
+        <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20"/>
+        <button class="btn-register" id="btn-register">Join</button>
+      </div>
+      <div class="lb-content">
+        <div id="lb-table-wrap">
+          <!-- Table rendered by JS -->
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer id="footer">
+  <div class="footer-dev">
+    <i class="fab fa-github" style="color:var(--text2);"></i>
+    Developer:
+    <a href="https://github.com/AnisurRahmanJU" target="_blank" rel="noopener">
+      <i class="fas fa-user-code"></i> Md. Anisur Rahman
+    </a>
+  </div>
+  <div class="footer-mid">
+    <span><i class="fas fa-circle-dot"></i> 10 Problems</span>
+    <span><i class="fas fa-clock"></i> 2 Hours</span>
+    <span><i class="fas fa-code"></i> JavaScript</span>
+  </div>
+  <div class="footer-powered">
+    Powered by <span class="footer-logo-sm">JS AnisOJ</span>
+  </div>
+</footer>
+
+<!-- TIME UP MODAL -->
+<div class="modal-overlay" id="time-up-modal">
+  <div class="modal">
+    <h2><i class="fas fa-hourglass-end"></i> Time's Up!</h2>
+    <p>The contest has ended. Here's your final performance:</p>
+    <div class="modal-stat">
+      <div class="modal-stat-item"><div class="val" id="final-solved">0</div><div class="lbl">Solved</div></div>
+      <div class="modal-stat-item"><div class="val" id="final-score">0</div><div class="lbl">Score</div></div>
+      <div class="modal-stat-item"><div class="val" id="final-time">0:00</div><div class="lbl">Elapsed</div></div>
+    </div>
+    <button class="btn btn-accent" onclick="document.getElementById('time-up-modal').classList.remove('open')" style="width:100%;justify-content:center;padding:10px;">
+      <i class="fas fa-eye"></i> View Leaderboard
+    </button>
+  </div>
+</div>
+
+<!-- TOAST container -->
+<div id="toast-container"></div>
+<script src="script.js"></script>
+</body>
+</html>
