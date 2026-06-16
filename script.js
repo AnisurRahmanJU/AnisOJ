@@ -494,16 +494,16 @@ function toast(msg, type='info') {
 ══════════════════════════════════════════════════ */
 function addDemoPlayers() {
   const demos = [
-    { name: 'Nusrat Faria', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Likhon Rayhan', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
-    { name: 'Rafiul Islsm', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
-    { name: 'Mohammad Ali', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Sonjoy Kumar', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Abir Hossain', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
-    { name: 'Sumaiya Yasmin', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
-    { name: 'Aminur Rahman', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Anika Anjum', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Devid Copperfield', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Nusrat', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Likhon', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Rafi', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
+    { name: 'Mohammad', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Sonjoy', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Abir', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Sumaiya', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
+    { name: 'Aminul', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Anika', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Devid', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
     
   ];
   demos.forEach(d => {
