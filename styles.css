@@ -544,11 +544,3 @@ body{
 }
 .empty-state i{font-size:2rem;color:var(--border);}
 .empty-state p{font-size:0.8rem;}
-
-
-
-@media(max-width:1200px){#col-questions{width:260px}#col-leaderboard{width:280px}#q-description{max-height:180px}}
-@media(max-width:992px){#header{padding:0 12px}.contest-badge,#lb-resizer{display:none}#main{flex-direction:column;height:auto;overflow:auto}#col-questions,#col-editor,#col-leaderboard{width:100%;max-width:none;min-width:0;border:none}#col-questions{border-bottom:1px solid var(--border);max-height:260px}.q-list{max-height:200px}#col-leaderboard{border-top:1px solid var(--border);min-height:350px}#editor-wrap .CodeMirror{height:400px}}
-@media(max-width:768px){html{font-size:13px}#header{flex-wrap:wrap;height:auto;padding:10px;gap:10px}.header-center{width:100%;justify-content:center;order:3}.header-right{margin-left:auto}.logo{font-size:1rem}.logo-icon{width:28px;height:28px}#main{height:auto}.editor-top,.submit-row,#footer{flex-direction:column}.editor-actions,.footer-mid{width:100%;flex-wrap:wrap;justify-content:center}#footer{height:auto;padding:10px;gap:8px;text-align:center}.btn{flex:1;min-width:110px;justify-content:center}#q-description{max-height:none}.examples-row{flex-direction:column}.example-box,.btn-submit{width:100%}#editor-wrap,#editor-wrap .CodeMirror{height:420px!important;font-size:12px}#output-panel{max-height:300px}.modal{width:95%;padding:20px}.modal-stat{flex-wrap:wrap}}
-@media(max-width:576px){.score-chip{display:none}.timer-box{padding:5px 10px}#timer{font-size:.95rem;min-width:auto}.q-item{padding:8px}.q-name{font-size:.75rem}.q-badge,.lb-table{font-size:.65rem}#q-display-title,#username-input{font-size:.75rem}.btn,.btn-register{font-size:.7rem;padding:8px}.lb-cell{width:22px;height:22px;font-size:.6rem}#editor-wrap,#editor-wrap .CodeMirror{height:380px!important}#toast-container{left:10px;right:10px}.toast{width:100%}}
-@media(max-width:400px){.logo{font-size:.9rem}.header-center,.username-row,.editor-actions,.constraints-list{flex-direction:column}.btn,.btn-register,.constraint-chip{width:100%}.constraint-chip{text-align:center}}
