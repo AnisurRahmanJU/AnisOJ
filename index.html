@@ -26,7 +26,7 @@
 <header id="header">
   <a class="logo" href="index.html">
     <div class="logo-icon"><i class="fas fa-code"></i></div>
-    <span>AnisOJ</span>
+     <span>AnisOJ</span>
   </a>
 
   <div class="header-center">
@@ -34,7 +34,7 @@
       <i class="fas fa-clock"></i>
       <span id="timer">02:00:00</span>
     </div>
-    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>JS Live Contest</div>
+    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>Live JS Contest</div>
   </div>
 
   <div class="header-right">
@@ -43,9 +43,6 @@
       <span>Score:</span>
       <span id="total-score">0/10</span>
     </div>
-    <a href="Admin/admin.html" target="_blank" class="btn btn-ghost" title="Admin Panel" style="text-decoration:none;">
-      <i class="fas fa-user-shield"></i>
-    </a>
     <button id="theme-btn" title="Toggle theme">
       <i class="fas fa-moon" id="theme-icon"></i>
     </button>
@@ -58,7 +55,7 @@
   <!-- LEFT: Questions -->
   <aside id="col-questions">
     <div class="col-header">
-      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems</span>
+      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems  <b><time id="current-date"> </time></b></span>
       <span class="q-progress" id="q-progress">0 / 10</span>
     </div>
     <div class="q-list" id="q-list"></div>
@@ -128,31 +125,9 @@
         <span class="col-title"><i class="fas fa-ranking-star" style="margin-right:6px;"></i>Leaderboard</span>
         <span style="font-size:0.7rem;color:var(--text3);" id="lb-participants">0 users</span>
       </div>
-      <div class="username-row" style="flex-direction:column;gap:6px;align-items:stretch;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="username-input" placeholder="Username..." maxlength="20" style="flex:1;"/>
-        </div>
-        <div id="pw-gate-row" style="display:none;gap:8px;align-items:center;flex-direction:row;">
-          <div style="position:relative;flex:1;">
-            <input type="password" id="contest-pw-input"
-              placeholder="Contest password..."
-              style="font-family:var(--font);font-size:0.8rem;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:6px 32px 6px 10px;width:100%;outline:none;transition:.15s;"
-              maxlength="64"/>
-            <button id="btn-pw-eye"
-              style="position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.8rem;"
-              title="Show/hide">
-              <i class="fas fa-eye" id="pw-eye-idx"></i>
-            </button>
-          </div>
-          <button class="btn-register" id="btn-register">
-            <i class="fas fa-right-to-bracket" style="margin-right:4px;"></i>Join
-          </button>
-        </div>
-        <div id="no-pw-row" style="display:flex;gap:8px;align-items:center;">
-          <button class="btn-register" id="btn-register-nopw" style="width:100%;">
-            <i class="fas fa-right-to-bracket" style="margin-right:4px;"></i>Join Contest
-          </button>
-        </div>
+      <div class="username-row">
+        <input type="text" id="username-input" placeholder="Enter your username..." maxlength="20"/>
+        <button class="btn-register" id="btn-register">Join</button>
       </div>
       <div class="lb-content">
         <div id="lb-table-wrap">
@@ -174,7 +149,7 @@
     </a>
   </div>
   <div class="footer-mid">
-    <span><i class="fas fa-circle-dot"></i> <span id="footer-q-count">10</span> Problems</span>
+    <span><i class="fas fa-circle-dot"></i> 10 Problems</span>
     <span><i class="fas fa-clock"></i> 2 Hours</span>
     <span><i class="fas fa-code"></i> JavaScript</span>
   </div>
@@ -201,6 +176,11 @@
 
 <!-- TOAST container -->
 <div id="toast-container"></div>
+<script>
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString();
+  document.getElementById("current-date").innerText = formattedDate;
+</script>
 <script src="script.js"></script>
 </body>
 </html>
