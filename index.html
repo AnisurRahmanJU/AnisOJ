@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AnisOJ</title>
+<title>JS AnisOJ — JavaScript Online Judge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
@@ -18,15 +18,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css"/>
-<link rel="stylesheet" href="styles.css"/>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- ═══ HEADER ═══ -->
 <header id="header">
-  <a class="logo" href="index.html" target="_blank">
-    <div class="logo-icon"><i class="fa-solid fa-code"></i></div>
-    <span>AnisOJ</span>
+  <a class="logo" href="#">
+    <div class="logo-icon">OJ</div>
+    JS <span>AnisOJ</span>
   </a>
 
   <div class="header-center">
@@ -34,7 +34,7 @@
       <i class="fas fa-clock"></i>
       <span id="timer">02:00:00</span>
     </div>
-    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>Live JS Contest</div>
+    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>JS Contest</div>
   </div>
 
   <div class="header-right">
@@ -55,7 +55,7 @@
   <!-- LEFT: Questions -->
   <aside id="col-questions">
     <div class="col-header">
-      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems  <b><time id="current-date"> </time></b></span>
+      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems  <b><time id="current-date"> </time></b> </span>
       <span class="q-progress" id="q-progress">0 / 10</span>
     </div>
     <div class="q-list" id="q-list"></div>
@@ -89,6 +89,9 @@
       <textarea id="code-editor"></textarea>
     </div>
 
+    <!-- Vertical resize handle -->
+    <div id="editor-resizer" title="Drag to resize editor height"></div>
+
     <!-- Output Panel -->
     <div id="output-panel">
       <div class="output-header">
@@ -111,6 +114,9 @@
       </div>
     </div>
   </section>
+
+  <!-- HORIZONTAL resize handle for editor column width -->
+  <div id="col-editor-resizer" title="Drag to resize editor width"></div>
 
   <!-- RIGHT: Leaderboard -->
   <aside id="col-leaderboard">
@@ -149,7 +155,7 @@
     <span><i class="fas fa-code"></i> JavaScript</span>
   </div>
   <div class="footer-powered">
-    Powered by <span class="footer-logo-sm">AnisOJ</span>
+    Powered by <span class="footer-logo-sm">JS AnisOJ</span>
   </div>
 </footer>
 
@@ -172,14 +178,9 @@
 <!-- TOAST container -->
 <div id="toast-container"></div>
 <script>
-  // Get the current date object
   const today = new Date();
-  
-  // Format the date based on the user's browser language settings
   const formattedDate = today.toLocaleDateString();
-  
-  // Insert the formatted text into the HTML element
-document.getElementById("current-date").innerText = formattedDate;
+  document.getElementById("current-date").innerText = formattedDate;
 </script>
 <script src="script.js"></script>
 </body>
