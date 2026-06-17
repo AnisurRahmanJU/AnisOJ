@@ -236,10 +236,11 @@ body{
 
 /* MIDDLE COLUMN — Editor */
 #col-editor{
-  flex:1;min-width:0;
+  width:450px;min-width:450px;max-width:450px;flex-shrink:0;
   display:flex;flex-direction:column;
   background:var(--bg2);
   overflow:hidden;
+  border-right:1px solid var(--border);
 }
 .editor-top{
   flex-shrink:0;padding:12px 14px;
@@ -293,12 +294,44 @@ body{
   border-radius:10px;padding:2px 9px;font-size:0.7rem;color:var(--text3);
 }
 
-/* CodeMirror wrapper */
-#editor-wrap{flex:1;overflow:auto;position:relative;min-height:350px;}
+/* CodeMirror wrapper — fixed 450px wide, vertically resizable */
+#editor-wrap{
+  position:relative;
+  width:450px;
+  height:300px;   /* default height, JS can override */
+  min-height:120px;
+  flex-shrink:0;
+  overflow:hidden;
+}
 #editor-wrap .CodeMirror{
-  height:350px; font-family:var(--font)!important;font-size:13px;line-height:1.6;
+  width:450px!important;
+  height:100%!important;
+  font-family:var(--font)!important;font-size:13px;line-height:1.6;
 }
 .CodeMirror-gutters{border-right:1px solid var(--border)!important;}
+/* vertical drag handle at bottom of editor */
+#editor-resizer{
+  width:450px;height:6px;
+  background:var(--bg3);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  cursor:row-resize;
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+  position:relative;z-index:5;
+}
+#editor-resizer::after{
+  content:'';
+  width:40px;height:2px;
+  border-radius:2px;
+  background:var(--border);
+  transition:.15s;
+}
+#editor-resizer:hover{background:var(--bg4);}
+#editor-resizer:hover::after{background:var(--accent);}
+#editor-resizer.dragging{background:var(--bg4);}
+#editor-resizer.dragging::after{background:var(--accent);}
 
 /* Output */
 #output-panel{
@@ -359,11 +392,11 @@ body{
 
 /* RIGHT COLUMN — Leaderboard */
 #col-leaderboard{
-  width:340px;min-width:180px;
+  flex:1;min-width:180px;
   border-left:1px solid var(--border);
   background:var(--bg2);
   display:flex;flex-direction:column;
-  overflow:hidden;flex-shrink:0;
+  overflow:hidden;
   position:relative;
 }
 /* resize handle */
@@ -544,3 +577,148 @@ body{
 }
 .empty-state i{font-size:2rem;color:var(--border);}
 .empty-state p{font-size:0.8rem;}
+
+/* ═══════════════════════════════════════════════════════════
+   TABLET  ≤ 1024px
+═══════════════════════════════════════════════════════════ */
+@media (max-width:1024px){
+  #col-leaderboard{width:240px;min-width:200px;}
+  #col-editor{width:400px!important;min-width:400px!important;max-width:400px!important;}
+  #editor-wrap{width:400px!important;}
+  #editor-wrap .CodeMirror{width:400px!important;}
+  #editor-resizer{width:400px!important;}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE  ≤ 768px
+   Strategy: body scrolls, all 3 panels stack top→bottom,
+   each panel shows fully — NO hiding, NO tabs
+═══════════════════════════════════════════════════════════ */
+@media (max-width:768px){
+
+  /* ── body scrolls instead of the fixed viewport ── */
+  body{overflow-y:auto;overflow-x:hidden;}
+
+  /* ── Header: compact ── */
+  #header{
+    position:sticky;top:0;z-index:200;
+    padding:0 10px;height:46px;
+  }
+  .logo{font-size:0.88rem;gap:6px;}
+  .logo-icon{width:26px;height:26px;font-size:0.68rem;}
+  .contest-badge{display:none;}
+  .timer-box{padding:4px 8px;}
+  #timer{font-size:0.88rem;letter-spacing:1px;min-width:52px;}
+  .score-chip{padding:3px 8px;font-size:0.7rem;}
+  .score-chip>span:first-of-type{display:none;}
+
+  /* ── MAIN: vertical flex, auto height, no overflow clipping ── */
+  #main{
+    display:flex !important;
+    flex-direction:column !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    overflow:visible !important;
+  }
+
+  /* ── ALL THREE COLUMNS: full width, stacked, always visible ── */
+  #col-questions,
+  #col-editor,
+  #col-leaderboard{
+    position:static !important;
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    flex-direction:column !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    height:auto !important;
+    min-height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+    flex-shrink:0 !important;
+    border-left:none !important;
+    border-right:none !important;
+    border-bottom:3px solid var(--border) !important;
+  }
+
+  /* ── Question list: all visible, no scroll trap ── */
+  .q-list{
+    overflow-y:visible !important;
+    height:auto !important;
+    max-height:none !important;
+    padding:6px;
+  }
+
+  /* ── Question description: fully expanded ── */
+  #q-description{
+    max-height:none !important;
+    overflow-y:visible !important;
+  }
+
+  /* ── Editor section header ── */
+  .editor-top{padding:8px 10px;flex-wrap:wrap;gap:6px;}
+  #q-display-title{font-size:0.82rem;width:100%;}
+  .editor-actions{width:100%;justify-content:flex-end;}
+
+  /* ── Code editor: 100% wide, fixed height ── */
+  #editor-wrap{
+    width:100% !important;
+    height:300px !important;
+    min-height:300px !important;
+    max-height:300px !important;
+    overflow:hidden !important;
+    flex-shrink:0 !important;
+  }
+  #editor-wrap .CodeMirror{
+    width:100% !important;
+    height:300px !important;
+  }
+  #editor-resizer{width:100% !important;}
+
+  /* ── Output panel: natural height, scrollable area inside ── */
+  #output-panel{
+    max-height:none !important;
+    height:auto !important;
+    overflow:visible !important;
+    flex-shrink:0 !important;
+  }
+  #output-area{
+    max-height:200px;
+    overflow-y:auto;
+  }
+  .submit-row{padding:8px 10px;}
+  .btn-submit{padding:7px 16px;font-size:0.78rem;}
+
+  /* ── Leaderboard: no horizontal resize handle ── */
+  #lb-resizer{display:none !important;}
+  .lb-inner{padding-left:0 !important;}
+  .lb-content{overflow-x:auto;}
+  #lb-table-wrap{overflow-x:auto;}
+  .lb-table{min-width:480px;}
+
+  /* ── Footer ── */
+  #footer{padding:0 10px;}
+  .footer-mid{display:none;}
+  .footer-powered{font-size:0.68rem;}
+  .footer-dev{font-size:0.68rem;}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SMALL MOBILE  ≤ 480px
+═══════════════════════════════════════════════════════════ */
+@media (max-width:480px){
+  html{font-size:13px;}
+  #header{height:44px;}
+  .timer-box{padding:3px 7px;}
+  #timer{font-size:0.8rem;}
+  .examples-row{flex-direction:column;}
+  .example-box{min-width:0;}
+  #editor-wrap,
+  #editor-wrap .CodeMirror{height:260px !important;min-height:260px !important;max-height:260px !important;}
+  .lb-table th,.lb-table td{padding:4px 2px;}
+  .lb-cell{width:20px;height:20px;font-size:0.55rem;}
+  .btn{font-size:0.7rem;padding:5px 9px;}
+}
