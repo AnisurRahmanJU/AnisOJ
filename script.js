@@ -1,6 +1,6 @@
 <!-- QUESTIONS DATA -->
-/* ── Default questions (fallback if admin panel hasn't set any) ── */
-const DEFAULT_QUESTIONS = [
+
+const QUESTIONS = [
   {id:1,title:"Array Sum",difficulty:"Easy",description:`Write a function <code>arraySum(arr)</code> that takes an array of numbers and returns their sum.`,examples:[{input:"arraySum([1, 2, 3, 4, 5])",output:"15"},{input:"arraySum([-1, 0, 1])",output:"0"},{input:"arraySum([10, 20, 30])",output:"60"}],constraints:["Array length: 1 ≤ n ≤ 1000","Elements: -10⁶ ≤ arr[i] ≤ 10⁶"],testCases:[{input:[[1,2,3,4,5]],expected:15},{input:[[-1,0,1]],expected:0},{input:[[10,20,30]],expected:60},{input:[[0]],expected:0},{input:[[-5,-10,15]],expected:0}],functionName:"arraySum"},
   {id:2,title:"Palindrome Check",difficulty:"Easy",description:`Write a function <code>isPalindrome(str)</code> that returns <code>true</code> if the string is a palindrome (reads the same forwards and backwards), ignoring case. Otherwise return <code>false</code>.`,examples:[{input:'isPalindrome("racecar")',output:"true"},{input:'isPalindrome("Hello")',output:"false"},{input:'isPalindrome("Madam")',output:"true"}],constraints:["String length: 1 ≤ n ≤ 10⁴","Only alphabetic characters"],testCases:[{input:["racecar"],expected:true},{input:["Hello"],expected:false},{input:["Madam"],expected:true},{input:["a"],expected:true},{input:["abba"],expected:true}],functionName:"isPalindrome"},
   {id:3,title:"FizzBuzz Array",difficulty:"Easy",description:`Write a function <code>fizzBuzz(n)</code> that returns an array of strings from 1 to n where:<br>• Multiples of 3 → <code>"Fizz"</code><br>• Multiples of 5 → <code>"Buzz"</code><br>• Multiples of both → <code>"FizzBuzz"</code><br>• Others → number as string`,examples:[{input:"fizzBuzz(5)",output:'["1","2","Fizz","4","Buzz"]'},{input:"fizzBuzz(15)[14]",output:'"FizzBuzz"'}],constraints:["1 ≤ n ≤ 10⁴"],testCases:[{input:[5],expected:["1","2","Fizz","4","Buzz"]},{input:[1],expected:["1"]},{input:[3],expected:["1","2","Fizz"]},{input:[15],expected:["1","2","Fizz","4","Buzz","Fizz","7","8","Fizz","Buzz","11","Fizz","13","14","FizzBuzz"]},{input:[6],expected:["1","2","Fizz","4","Buzz","Fizz"]}],functionName:"fizzBuzz"},
@@ -12,37 +12,6 @@ const DEFAULT_QUESTIONS = [
   {id:9,title:"Flatten Array",difficulty:"Hard",description:`Write a function <code>flattenArray(arr)</code> that deeply flattens a nested array of any depth into a single-level array. <strong>Do not use Array.prototype.flat()</strong>.`,examples:[{input:"flattenArray([1,[2,[3,[4]],5]])",output:"[1,2,3,4,5]"},{input:"flattenArray([[1,2],[3,4]])",output:"[1,2,3,4]"},{input:"flattenArray([1,2,3])",output:"[1,2,3]"}],constraints:["Nesting depth: up to 10 levels","Total elements: up to 10⁴"],testCases:[{input:[[1,[2,[3,[4]],5]]],expected:[1,2,3,4,5]},{input:[[[1,2],[3,4]]],expected:[1,2,3,4]},{input:[[1,2,3]],expected:[1,2,3]},{input:[[[[[5]]]]],expected:[5]},{input:[[1,[2,3],[4,[5,6]]]],expected:[1,2,3,4,5,6]}],functionName:"flattenArray"},
   {id:10,title:"Group Anagrams",difficulty:"Hard",description:`Write a function <code>groupAnagrams(strs)</code> that groups anagrams together. Return an array of groups. Order within groups and between groups does not matter.`,examples:[{input:'groupAnagrams(["eat","tea","tan","ate","nat","bat"])',output:'[["bat"],["nat","tan"],["ate","eat","tea"]]'},{input:'groupAnagrams([""])',output:'[[""]]'},{input:'groupAnagrams(["a"])',output:'[["a"]]'}],constraints:["1 ≤ strs.length ≤ 10⁴","0 ≤ strs[i].length ≤ 100","Lowercase letters only"],testCases:[{input:[["eat","tea","tan","ate","nat","bat"]],expected:[["bat"],["nat","tan"],["ate","eat","tea"]],isGroupAnagram:true},{input:[[""]], expected:[[""]], isGroupAnagram:true},{input:[["a"]],expected:[["a"]],isGroupAnagram:true},{input:[["abc","bca","cab","xyz"]],expected:[["abc","bca","cab"],["xyz"]],isGroupAnagram:true},{input:[["ab","ba","cd","dc","ef"]],expected:[["ab","ba"],["cd","dc"],["ef"]],isGroupAnagram:true}],functionName:"groupAnagrams"},
 ];
-
-/* ── Load questions: admin panel overrides via localStorage ── */
-(function() {
-  const LS_Q_KEY = 'anisoj_questions_v1';
-  try {
-    const stored = localStorage.getItem(LS_Q_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        window.QUESTIONS = parsed;
-        return;
-      }
-    }
-  } catch(e) {}
-  window.QUESTIONS = DEFAULT_QUESTIONS;
-})();
-
-const QUESTIONS = window.QUESTIONS;
-
-/* ── Listen for admin panel question updates (BroadcastChannel) ── */
-(function() {
-  if (typeof BroadcastChannel === 'undefined') return;
-  const bc = new BroadcastChannel('anisoj_lb');
-  bc.onmessage = (e) => {
-    if (e.data?.type === 'q_update' && Array.isArray(e.data.data)) {
-      // Reload page to apply new questions (safest approach)
-      window.location.reload();
-    }
-  };
-})();
-
 
 <!-- MAIN SCRIPT -->
 
@@ -425,8 +394,8 @@ function submitCode() {
     if (allPass) {
       if (!prev || prev.status !== 'ac') {
         STATE.results[qId] = { status: 'ac', time: elapsed, attempts: (prev?.attempts||0)+1 };
-        updateLeaderboard();
         toast('✓ Accepted! Great job!', 'success');
+        updateLeaderboard();
       } else {
         toast('Already accepted!', 'info');
       }
@@ -435,7 +404,6 @@ function submitCode() {
     } else {
       const att = (prev?.attempts||0)+1;
       STATE.results[qId] = { status: 'wa', time: elapsed, attempts: att };
-      updateLeaderboard();
       verdictEl.textContent = `✗ Wrong Answer (attempt ${att})`;
       verdictEl.className = 'wa';
       toast(`✗ Wrong Answer — keep trying!`, 'error');
@@ -507,7 +475,7 @@ function renderLeaderboard() {
     let rankBadge = `<span class="rank-badge${rank<=3?' rank-'+rank:''}">${rank}</span>`;
     let cells = '';
     for(let i=1;i<=10;i++) {
-      const r = u.results[i] ?? u.results[String(i)];
+      const r = u.results[i];
       if (!r) {
         cells += `<td><span class="lb-cell">—</span></td>`;
       } else if (r.status==='ac') {
@@ -518,183 +486,44 @@ function renderLeaderboard() {
         cells += `<td title="${r.attempts} attempts"><span class="lb-cell wrong">✗</span></td>`;
       }
     }
-    const score = Object.values(u.results).filter(r=>r?.status==='ac').length;
+    const score = Object.values(u.results).filter(r=>r.status==='ac').length;
     return `<tr><td>${rankBadge}${u.name}</td>${cells}<td class="lb-score-col">${score}</td></tr>`;
   });
 
   wrap.innerHTML = `<table class="lb-table"><thead>${hdr}</thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
-/* ══════════════════════════════════════════════════
-   LEADERBOARD STORAGE (localStorage + BroadcastChannel)
-   — works across tabs instantly
-   — works across devices if Firebase config is set
-   — no backend needed
-══════════════════════════════════════════════════ */
-const LS_KEY = 'anisoj_leaderboard_v1';
-
-/* BroadcastChannel: instant sync across tabs on same browser */
-const bc = (typeof BroadcastChannel !== 'undefined')
-  ? new BroadcastChannel('anisoj_lb')
-  : null;
-
-function lbSave(data) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e){}
-  if (bc) bc.postMessage({ type: 'lb_update', data });
-}
-
-function lbLoad() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch(e) { return {}; }
-}
-
-/* Listen for updates from other tabs */
-if (bc) {
-  bc.onmessage = (e) => {
-    if (e.data?.type === 'lb_update') {
-      applyLbData(e.data.data);
-    }
-  };
-}
-
-/* Also poll localStorage every 3s (cross-browser fallback) */
-setInterval(() => {
-  const data = lbLoad();
-  applyLbData(data);
-}, 3000);
-
-function normalizeResults(raw) {
-  /* JSON parse করলে keys string হয় — সব numeric করে নাও */
-  const out = {};
-  Object.entries(raw || {}).forEach(([k, v]) => { out[Number(k)] = v; });
-  return out;
-}
-
-function applyLbData(data) {
-  STATE.leaderboard = Object.values(data).map(u => {
-    const normalized = normalizeResults(u.results);
-    /* if this is the current user, use in-memory STATE.results
-       so polling never overwrites what they just submitted */
-    if (STATE.username && u.name === STATE.username) {
-      return { name: u.name, results: normalizeResults(STATE.results) };
-    }
-    return { name: u.name, results: normalized };
-  });
-  renderLeaderboard();
-}
-
 function updateLeaderboard() {
   if (!STATE.username) return;
-
-  const normalizedResults = normalizeResults(STATE.results);
-
-  /* 1. STATE.leaderboard immediately update */
-  let entry = STATE.leaderboard.find(u => u.name === STATE.username);
-  if (entry) {
-    entry.results = normalizedResults;
-  } else {
-    STATE.leaderboard.push({ name: STATE.username, results: normalizedResults });
+  let user = STATE.leaderboard.find(u=>u.name===STATE.username);
+  if (!user) {
+    user = { name: STATE.username, results: {} };
+    STATE.leaderboard.push(user);
   }
-
-  /* 2. localStorage save */
-  const data = lbLoad();
-  data[STATE.username] = { name: STATE.username, results: normalizedResults, updatedAt: Date.now() };
-  lbSave(data);
+  // copy current results
+  Object.assign(user.results, JSON.parse(JSON.stringify(STATE.results)));
 }
 
-/* ── contest password helpers ── */
-const LS_PW_KEY = 'anisoj_contest_pw_v1';
-function getContestPw() {
-  try { return localStorage.getItem(LS_PW_KEY) || ''; } catch(e) { return ''; }
-}
-
-function initPwGate() {
-  const pw = getContestPw();
-  const pwRow   = document.getElementById('pw-gate-row');
-  const noPwRow = document.getElementById('no-pw-row');
-  if (pw) {
-    pwRow.style.display   = 'flex';
-    noPwRow.style.display = 'none';
-  } else {
-    pwRow.style.display   = 'none';
-    noPwRow.style.display = 'flex';
-  }
-}
-
-/* toggle show/hide contest pw in index.html */
-document.getElementById('btn-pw-eye').onclick = () => {
-  const inp  = document.getElementById('contest-pw-input');
-  const icon = document.getElementById('pw-eye-idx');
-  if (inp.type === 'password') { inp.type = 'text';     icon.className = 'fas fa-eye-slash'; }
-  else                         { inp.type = 'password'; icon.className = 'fas fa-eye'; }
-};
-
-function doRegister() {
+// username registration
+document.getElementById('btn-register').onclick = () => {
   const name = document.getElementById('username-input').value.trim();
   if (!name) return toast('Enter a username first', 'info');
   if (name.length < 2) return toast('Username too short', 'error');
-
-  /* password check */
-  const requiredPw = getContestPw();
-  if (requiredPw) {
-    const entered = document.getElementById('contest-pw-input').value;
-    if (!entered) return toast('Enter the contest password to join', 'error');
-    if (entered !== requiredPw) {
-      document.getElementById('contest-pw-input').style.borderColor = 'var(--red-bright)';
-      setTimeout(() => document.getElementById('contest-pw-input').style.borderColor = '', 1500);
-      return toast('Incorrect contest password ✗', 'error');
-    }
-  }
-
   STATE.username = name;
-
-  /* add to STATE.leaderboard if not already there */
-  if (!STATE.leaderboard.find(u => u.name === name)) {
+  // add to leaderboard if not present
+  if (!STATE.leaderboard.find(u=>u.name===name)) {
     STATE.leaderboard.push({ name, results: {} });
   }
-
-  /* persist to localStorage */
-  const data = lbLoad();
-  if (!data[name]) {
-    data[name] = { name, results: {}, updatedAt: Date.now() };
-    lbSave(data);
-  }
-
+  updateLeaderboard();
   renderLeaderboard();
   toast(`Welcome, ${name}! 🎉`, 'success');
-
-  /* disable all join controls */
   document.getElementById('username-input').disabled = true;
-  const btnPw   = document.getElementById('btn-register');
-  const btnNoPw = document.getElementById('btn-register-nopw');
-  if (btnPw)   { btnPw.textContent   = '✓ Joined'; btnPw.disabled   = true; }
-  if (btnNoPw) { btnNoPw.textContent = '✓ Joined'; btnNoPw.disabled = true; }
-  const pwInp = document.getElementById('contest-pw-input');
-  if (pwInp) pwInp.disabled = true;
-}
-
-/* ── username registration ── */
-document.getElementById('btn-register').onclick = doRegister;
-document.getElementById('btn-register-nopw').onclick = doRegister;
+  document.getElementById('btn-register').textContent = '✓ Joined';
+  document.getElementById('btn-register').disabled = true;
+};
 document.getElementById('username-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRegister();
+  if (e.key === 'Enter') document.getElementById('btn-register').click();
 });
-document.getElementById('contest-pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRegister();
-});
-
-/* re-check pw gate whenever localStorage changes (admin updates pw) */
-window.addEventListener('storage', (e) => {
-  if (e.key === LS_PW_KEY) initPwGate();
-});
-if (typeof BroadcastChannel !== 'undefined') {
-  const bcIdx = new BroadcastChannel('anisoj_lb');
-  bcIdx.onmessage = (ev) => {
-    if (ev.data?.type === 'pw_update') initPwGate();
-  };
-}
 
 /* ══════════════════════════════════════════════════
    TOAST
@@ -708,56 +537,43 @@ function toast(msg, type='info') {
 }
 
 /* ══════════════════════════════════════════════════
-   SEED DEMO PLAYERS (only if storage is empty)
+   DEMO LEADERBOARD DATA (pre-populated for visual)
 ══════════════════════════════════════════════════ */
-function seedDemoPlayers() {
-  const existing = lbLoad();
-  if (Object.keys(existing).length > 0) return; /* already seeded */
-
+function addDemoPlayers() {
   const demos = [
-    { name: 'Alice',  solved: [1,2,3,4,5,6,7],        times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Bob',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
-    { name: 'Rafi',   solved: [1,2,3,5,6],              times: [400,700,1200,2000,2800]         },
-    { name: 'Sadia',  solved: [1,2,3,4,5,6,7,8],       times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Karim',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
+    { name: 'Nusrat', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Likhon', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Rafi', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
+    { name: 'Mohammad', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Sonjoy', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Abir', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Sumaiya', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
+    { name: 'Aminul', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Anika', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Devid', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
   ];
-
-  const data = {};
   demos.forEach(d => {
-    const results = {};
-    d.solved.forEach((qid, i) => {
-      results[qid] = { status: 'ac', time: d.times[i], attempts: 1 };
+    const u = { name: d.name, results: {} };
+    d.solved.forEach((qid,i) => {
+      u.results[qid] = { status:'ac', time: d.times[i], attempts: 1 };
     });
-    for (let q = 1; q <= 10; q++) {
-      if (!results[q] && Math.random() > 0.55) {
-        results[q] = { status: 'wa', time: Math.floor(Math.random()*5000), attempts: Math.floor(Math.random()*3)+1 };
+    // add a few WA
+    for(let q=1;q<=10;q++) {
+      if (!u.results[q] && Math.random()>0.6) {
+        u.results[q] = { status:'wa', time:Math.floor(Math.random()*5000), attempts: Math.floor(Math.random()*3)+1 };
       }
     }
-    data[d.name] = { name: d.name, results, updatedAt: Date.now() };
+    STATE.leaderboard.push(u);
   });
-
-  lbSave(data);
-  applyLbData(data);
+  renderLeaderboard();
 }
 
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
-/* update footer & score chip to reflect actual question count */
-(function() {
-  const n = QUESTIONS.length;
-  const fc = document.getElementById('footer-q-count');
-  if (fc) fc.textContent = n;
-  const ts = document.getElementById('total-score');
-  if (ts && ts.textContent === '0/10') ts.textContent = '0/' + n;
-})();
-
 renderQuestionList();
-seedDemoPlayers();
-applyLbData(lbLoad());
-initPwGate();
-
-/* Load first question after DOM + CodeMirror fully rendered */
+addDemoPlayers();
+// Load first question after DOM + CodeMirror fully rendered
 setTimeout(() => loadQuestion(QUESTIONS[0]), 50);
 
 /* ══════════════════════════════════════════════════
