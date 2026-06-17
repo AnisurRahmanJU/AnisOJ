@@ -1,1 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AnisOJ — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="styles.css"
+</head>
+<body>
 
+<!-- HEADER -->
+<header id="header">
+  <div class="logo">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    JS <span>AnisOJ</span> &nbsp;Admin
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="admin-badge"><i class="fas fa-user-gear" style="margin-right:5px;"></i>Admin Panel</span>
+    <div class="header-right">
+      <button id="theme-btn" title="Toggle theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- TAB NAV -->
+<nav class="tab-nav">
+  <button class="tab-nav-btn active" data-tab="leaderboard">
+    <i class="fas fa-ranking-star"></i> Leaderboard
+    <span class="badge" id="lb-count-badge">0</span>
+  </button>
+  <button class="tab-nav-btn" data-tab="questions">
+    <i class="fas fa-list-check"></i> Questions
+    <span class="badge" id="q-count-badge">10</span>
+  </button>
+  <button class="tab-nav-btn" data-tab="contest">
+    <i class="fas fa-key"></i> Contest Password
+  </button>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="content">
+
+  <!-- ════════════════════════════════════
+       LEADERBOARD TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section active" id="tab-leaderboard">
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-users" style="margin-right:4px;"></i>Participants</div>
+        <div class="stat-value blue" id="stat-participants">0</div>
+        <div class="stat-sub">registered users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-circle-check" style="margin-right:4px;"></i>Total Solves</div>
+        <div class="stat-value green" id="stat-solves">0</div>
+        <div class="stat-sub">accepted submissions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-trophy" style="margin-right:4px;"></i>Top Scorer</div>
+        <div class="stat-value orange" id="stat-top" style="font-size:1rem;padding-top:4px;">—</div>
+        <div class="stat-sub">leading the board</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-xmark" style="margin-right:4px;"></i>Wrong Attempts</div>
+        <div class="stat-value purple" id="stat-wrong">0</div>
+        <div class="stat-sub">total WA across board</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="fas fa-table-list"></i> Full Leaderboard</span>
+        <div class="panel-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-refresh">
+            <i class="fas fa-rotate-right"></i> Refresh
+          </button>
+          <button class="btn btn-danger btn-sm" id="btn-clear-all">
+            <i class="fas fa-trash-can"></i> Clear All Data
+          </button>
+        </div>
+      </div>
+      <div class="sync-bar">
+        <div class="sync-dot"></div>
+        Auto-syncing with index.html via localStorage &mdash; updates every 2s
+      </div>
+      <div class="lb-wrap">
+        <table class="lb-table" id="admin-lb-table">
+          <thead id="lb-thead"></thead>
+          <tbody id="lb-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       QUESTIONS TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section" id="tab-questions">
+    <div class="q-manager-grid">
+
+      <!-- LEFT: Question List -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-list-ol"></i> Question List</span>
+          <button class="btn btn-green btn-sm" id="btn-add-q">
+            <i class="fas fa-plus"></i> Add New
+          </button>
+        </div>
+        <div class="q-list-admin" id="q-list-admin"></div>
+      </div>
+
+      <!-- RIGHT: Question Editor -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-pen-to-square"></i> Question Editor</span>
+          <div class="panel-actions" id="q-editor-actions" style="display:none;">
+            <button class="btn btn-danger btn-sm" id="btn-delete-q">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+            <button class="btn btn-green btn-sm" id="btn-save-q">
+              <i class="fas fa-floppy-disk"></i> Save
+            </button>
+          </div>
+        </div>
+        <div class="q-editor-scroll" id="q-editor-wrap">
+          <div class="empty-state">
+            <i class="fas fa-pen-to-square"></i>
+            <p>Select a question to edit, or click "Add New" to create one.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       CONTEST PASSWORD TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section" id="tab-contest">
+    <div style="max-width:640px;margin:0 auto;">
+
+      <!-- Current Password Card -->
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-key"></i> Contest Password</span>
+          <span id="pw-status-badge" style="font-size:0.72rem;padding:3px 10px;border-radius:10px;background:var(--red-cell);color:var(--red-bright);border:1px solid var(--red-cell-border);">
+            <i class="fas fa-circle-xmark"></i> Not Set
+          </span>
+        </div>
+        <div style="padding:24px;">
+          <p style="font-size:0.8rem;color:var(--text2);margin-bottom:20px;line-height:1.7;">
+            Set a contest password here. Share it with participants — they must enter it along with their username in <code style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 6px;color:var(--yellow);">index.html</code> to join the contest.
+          </p>
+
+          <!-- Current pw display -->
+          <div id="pw-current-wrap" style="margin-bottom:20px;display:none;">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:8px;">Current Password</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="flex:1;background:var(--bg3);border:1px solid var(--green-cell-border);border-radius:var(--radius-sm);padding:10px 14px;font-size:1rem;font-weight:700;color:var(--green-bright);letter-spacing:2px;" id="pw-display">—</div>
+              <button class="btn btn-ghost btn-sm" id="btn-copy-pw" title="Copy to clipboard">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+            <div style="margin-top:10px;font-size:0.72rem;color:var(--text3);">
+              <i class="fas fa-share-nodes" style="margin-right:5px;color:var(--accent);"></i>
+              Share this password with your contest participants.
+            </div>
+          </div>
+
+          <!-- Set / Change password -->
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:8px;" id="pw-set-label">Set Contest Password</div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div style="position:relative;flex:1;">
+              <input type="password" id="pw-input" class="form-input"
+                placeholder="Enter contest password..."
+                style="padding-right:40px;"
+                autocomplete="new-password"/>
+              <button id="btn-pw-toggle"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.85rem;"
+                title="Show/hide">
+                <i class="fas fa-eye" id="pw-eye-icon"></i>
+              </button>
+            </div>
+            <button class="btn btn-green" id="btn-set-pw">
+              <i class="fas fa-floppy-disk"></i> Save Password
+            </button>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" id="btn-gen-pw">
+              <i class="fas fa-shuffle"></i> Generate Random
+            </button>
+            <button class="btn btn-danger btn-sm" id="btn-remove-pw">
+              <i class="fas fa-ban"></i> Remove Password
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info card -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-circle-info"></i> How It Works</span>
+        </div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">1</div>
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Admin sets a password here</div>
+              <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;">Create any password and save it. It is stored in localStorage and synced to index.html instantly.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">2</div>
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Share with participants</div>
+              <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;">Participants open index.html, enter their username and the contest password, then click Join.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">3</div>
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:3px;">Wrong password = no entry</div>
+              <div style="font-size:0.75rem;color:var(--text2);line-height:1.6;">If the password does not match, the user cannot join. Remove the password to disable the gate.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Confirm Action</h3>
+    <p id="confirm-msg">Are you sure?</p>
+    <div class="confirm-btn-row">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
