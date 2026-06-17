@@ -408,7 +408,7 @@ body{
 
 /* RIGHT COLUMN — Leaderboard */
 #col-leaderboard{
-  flex:1;min-width:420px;width:480px;
+  flex:1; width:320px !important;
   border-left:1px solid var(--border);
   background:var(--bg2);
   display:flex;flex-direction:column;
@@ -476,11 +476,11 @@ body{
   background:var(--red-cell);color:var(--red-bright);
   border-color:var(--red-cell-border);
 }
-/* time-based shading — brighter so always visible */
-.lb-cell.correct.t1{background:#1a5c2e;border-color:var(--green-cell-border);color:#3fb950;}
-.lb-cell.correct.t2{background:#1f7a3a;border-color:var(--green-cell-border);color:#3fb950;}
-.lb-cell.correct.t3{background:#259645;border-color:var(--green-cell-border);color:#fff;}
-.lb-cell.correct.t4{background:#2ea043;border-color:var(--green-cell-border);color:#fff;}
+/* time-based shading */
+.lb-cell.correct.t1{background:#143d22;border-color:var(--green-cell-border);}
+.lb-cell.correct.t2{background:#1a4f2b;border-color:var(--green-cell-border);}
+.lb-cell.correct.t3{background:#206134;border-color:var(--green-cell-border);}
+.lb-cell.correct.t4{background:#2ea043;border-color:var(--green-cell-border);}
 
 .lb-score-col{font-weight:700;color:var(--accent)!important;}
 .rank-badge{
