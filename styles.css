@@ -711,7 +711,7 @@ body{
   .lb-inner{padding-left:0 !important;}
   .lb-content{overflow-x:auto;}
   #lb-table-wrap{overflow-x:auto;}
-  .lb-table{min-width:320px;}
+  .lb-table{min-width:100%;}
 
   /* ── Footer ── */
   #footer{padding:0 10px;}
