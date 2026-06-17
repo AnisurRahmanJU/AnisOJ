@@ -7,7 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<link rel="stylesheet" href="styles.css"
+<link rel="stylesheet" href="styles.css">
+<script>
+    // কন্ডিশন: যদি AnisOJ !== "true" হয়, তবে লগইন পেজে পাঠাবে
+    if (localStorage.getItem("AnisOJ") !== "true") {
+        window.location.href = "../index.html";
+    }
+</script>
 </head>
 <body>
 
@@ -254,65 +260,44 @@
 <!-- TOAST -->
 <div id="toast-container"></div>
 
-<script src="script.js"></script>
-<script>
-    (async function() {
-        // পাসওয়ার্ডের হ্যাশ (Anisur35523200@Anis এর SHA-256)
-        const CORRECT_HASH = "82944b0e515d16788e02d68f2f0a514d79d1a3c61559e210137a671d15739343";
-
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  <script>
+    // আপনার নতুন ইউজার ডেটা
+    const USERS = [
+        {
+            user: "QWRtaW4=", // Admin
+            pass: "QW5pc3VyMzU1MjMyMDBAQW5pcw==", // Anisur35523200@Anis
+            role: "admin"
         }
+    ];
 
-        // লগইন স্টাইল তৈরি করা
-        const style = document.createElement('style');
-        style.innerHTML = `
-            #auth-overlay {
-                position: fixed; top:0; left:0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.95); z-index: 99999;
-                display: flex; justify-content: center; align-items: center;
-                backdrop-filter: blur(10px);
+    function decrypt(v) { return atob(v); }
+
+    function login() {
+        let u = document.getElementById("username").value;
+        let p = document.getElementById("password").value;
+        let valid = false;
+
+        USERS.forEach(acc => {
+            if (u === decrypt(acc.user) && p === decrypt(acc.pass)) {
+                valid = true;
             }
-            .login-box {
-                background: var(--bg2); padding: 30px; border-radius: 12px;
-                text-align: center; border: 1px solid var(--border); width: 300px;
-            }
-        `;
-        document.head.appendChild(style);
+        });
 
-        const overlay = document.createElement('div');
-        overlay.id = 'auth-overlay';
-        overlay.innerHTML = `
-            <div class="login-box">
-                <h3 style="color:var(--text); margin-bottom:20px;">Admin Login</h3>
-                <input type="text" id="login-u" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px; background:var(--bg3); border:1px solid var(--border); color:white; border-radius:4px;">
-                <input type="password" id="login-p" placeholder="Password" style="width:100%; padding:10px; margin-bottom:15px; background:var(--bg3); border:1px solid var(--border); color:white; border-radius:4px;">
-                <button id="auth-btn" style="width:100%; padding:10px; cursor:pointer; background:var(--green); border:none; border-radius:4px; font-weight:bold;">Login</button>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        document.getElementById('auth-btn').onclick = async () => {
-            const u = document.getElementById('login-u').value;
-            const p = document.getElementById('login-p').value;
-            const pHash = await sha256(p);
-
-            if (u === 'Admin' && pHash === CORRECT_HASH) {
-                sessionStorage.setItem('isAdmin', 'true');
-                overlay.style.display = 'none';
-            } else {
-                alert('Invalid Credentials!');
-            }
-        };
-
-        // চেক করা লগইন আছে কি না
-        if (sessionStorage.getItem('isAdmin') === 'true') {
-            overlay.style.display = 'none';
+        if (valid) {
+            // আপনার দেওয়া নতুন কন্ডিশন
+            localStorage.setItem("AnisOJ", "true");
+            window.location.href = "Admin/admin.html";
+        } else {
+            alert("Wrong Username or Password");
         }
-    })();
+    }
+
+    // অটো রিডাইরেক্ট চেক
+    if (localStorage.getItem("AnisOJ") === "true") {
+        window.location.href = "Admin/admin.html";
+    }
 </script>
+<script src="script.js"></script>
+
 </body>
 </html>
