@@ -1,5 +1,4 @@
 <!-- QUESTIONS DATA -->
-
 /* ── Default questions (fallback if admin panel hasn't set any) ── */
 const DEFAULT_QUESTIONS = [
   {id:1,title:"Array Sum",difficulty:"Easy",description:`Write a function <code>arraySum(arr)</code> that takes an array of numbers and returns their sum.`,examples:[{input:"arraySum([1, 2, 3, 4, 5])",output:"15"},{input:"arraySum([-1, 0, 1])",output:"0"},{input:"arraySum([10, 20, 30])",output:"60"}],constraints:["Array length: 1 ≤ n ≤ 1000","Elements: -10⁶ ≤ arr[i] ≤ 10⁶"],testCases:[{input:[[1,2,3,4,5]],expected:15},{input:[[-1,0,1]],expected:0},{input:[[10,20,30]],expected:60},{input:[[0]],expected:0},{input:[[-5,-10,15]],expected:0}],functionName:"arraySum"},
@@ -44,6 +43,8 @@ const QUESTIONS = window.QUESTIONS;
   };
 })();
 
+
+<!-- MAIN SCRIPT -->
 
 /* ══════════════════════════════════════════════════
    STATE
