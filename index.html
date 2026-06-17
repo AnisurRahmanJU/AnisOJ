@@ -56,7 +56,7 @@
   <!-- LEFT: Questions -->
   <aside id="col-questions">
     <div class="col-header">
-      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems</span>
+      <span class="col-title"><i class="fas fa-list-ol" style="margin-right:6px;"></i>Problems <b><time id="current-date"></time> (Today)</b> </span>
       <span class="q-progress" id="q-progress">0 / 10</span>
     </div>
     <div class="q-list" id="q-list"></div>
@@ -177,6 +177,11 @@
 
 <!-- TOAST container -->
 <div id="toast-container"></div>
+<script>
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString();
+  document.getElementById("current-date").innerText = formattedDate;
+</script>
 <script src="script.js"></script>
 
 </body>
