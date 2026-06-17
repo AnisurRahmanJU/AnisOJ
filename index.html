@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AnisOJ</title>
+<title>JS AnisOJ — JavaScript Online Judge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
@@ -18,15 +18,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css"/>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css"
 </head>
 <body>
 
 <!-- ═══ HEADER ═══ -->
 <header id="header">
-  <a class="logo" href="index.html" style="text-decoration:none; color:inherit;">
-    <div class="logo-icon"><i class="fas fa-code"></i></div>
-     <span> AnisOJ</span>
+  <a class="logo" href="#">
+    <div class="logo-icon">OJ</div>
+    JS <span>AnisOJ</span>
   </a>
 
   <div class="header-center">
@@ -34,7 +34,7 @@
       <i class="fas fa-clock"></i>
       <span id="timer">02:00:00</span>
     </div>
-    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>JS Live Contest</div>
+    <div class="contest-badge"><i class="fas fa-trophy" style="margin-right:5px;"></i>JS Contest</div>
   </div>
 
   <div class="header-right">
@@ -43,7 +43,7 @@
       <span>Score:</span>
       <span id="total-score">0/10</span>
     </div>
-    <a href="Admin/admin.html" target="_blank" class="btn btn-ghost" title="Admin Login" style="margin-right:10px;">
+    <a href="AnisOJ.html" target="_blank" class="btn btn-ghost" title="Admin Panel" style="text-decoration:none;">
       <i class="fas fa-user-shield"></i>
     </a>
     <button id="theme-btn" title="Toggle theme">
@@ -179,7 +179,7 @@
     <span><i class="fas fa-code"></i> JavaScript</span>
   </div>
   <div class="footer-powered">
-    Powered by <span class="footer-logo-sm">AnisOJ</span>
+    Powered by <span class="footer-logo-sm">JS AnisOJ</span>
   </div>
 </footer>
 
@@ -201,6 +201,6 @@
 
 <!-- TOAST container -->
 <div id="toast-container"></div>
-<script src="script.js"></script> 
+<script src="script.js"></script>
 </body>
 </html>
