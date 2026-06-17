@@ -13,7 +13,6 @@ const QUESTIONS = [
   {id:10,title:"Group Anagrams",difficulty:"Hard",description:`Write a function <code>groupAnagrams(strs)</code> that groups anagrams together. Return an array of groups. Order within groups and between groups does not matter.`,examples:[{input:'groupAnagrams(["eat","tea","tan","ate","nat","bat"])',output:'[["bat"],["nat","tan"],["ate","eat","tea"]]'},{input:'groupAnagrams([""])',output:'[[""]]'},{input:'groupAnagrams(["a"])',output:'[["a"]]'}],constraints:["1 ≤ strs.length ≤ 10⁴","0 ≤ strs[i].length ≤ 100","Lowercase letters only"],testCases:[{input:[["eat","tea","tan","ate","nat","bat"]],expected:[["bat"],["nat","tan"],["ate","eat","tea"]],isGroupAnagram:true},{input:[[""]], expected:[[""]], isGroupAnagram:true},{input:[["a"]],expected:[["a"]],isGroupAnagram:true},{input:[["abc","bca","cab","xyz"]],expected:[["abc","bca","cab"],["xyz"]],isGroupAnagram:true},{input:[["ab","ba","cd","dc","ef"]],expected:[["ab","ba"],["cd","dc"],["ef"]],isGroupAnagram:true}],functionName:"groupAnagrams"},
 ];
 
-
 <!-- MAIN SCRIPT -->
 
 /* ══════════════════════════════════════════════════
@@ -52,7 +51,12 @@ const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
   },
 });
 STATE.editor = editor;
-editor.setSize('100%', 300);
+
+/* Defer setSize until DOM layout is complete */
+requestAnimationFrame(() => {
+  editor.setSize('100%', 300);
+  editor.refresh();
+});
 
 /* ══════════════════════════════════════════════════
    EDITOR VERTICAL RESIZE (height)
@@ -258,7 +262,9 @@ function loadQuestion(q) {
   const savedCode = localStorage.getItem(`anisoj-code-${q.id}`);
   editor.setValue(savedCode || DEFAULT_STARTERS[q.functionName] || `function ${q.functionName}() {\n  \n}`);
   editor.clearHistory();
+  // Double refresh — immediate + after layout paint
   editor.refresh();
+  requestAnimationFrame(() => editor.refresh());
 
   // output reset
   document.getElementById('output-area').innerHTML = `<div class="empty-state" style="height:80px;"><p>Run or Submit to see results</p></div>`;
@@ -520,42 +526,6 @@ document.getElementById('username-input').addEventListener('keydown', e => {
 });
 
 /* ══════════════════════════════════════════════════
-   LEADERBOARD RESIZE (drag)
-══════════════════════════════════════════════════ */
-const resizer = document.getElementById('lb-resizer');
-const lbCol = document.getElementById('col-leaderboard');
-let isResizing = false, startX = 0, startW = 0;
-
-resizer.addEventListener('mousedown', e => {
-  if (window.innerWidth <= 768) return; // disable on mobile
-  isResizing = true;
-  startX = e.clientX;
-  startW = lbCol.offsetWidth;
-  resizer.classList.add('dragging');
-  document.body.style.cursor = 'col-resize';
-  document.body.style.userSelect = 'none';
-  e.preventDefault();
-});
-document.addEventListener('mousemove', e => {
-  if (!isResizing) return;
-  const delta = startX - e.clientX;
-  const newW = Math.max(180, Math.min(600, startW + delta));
-  // Must override flex:1 with explicit flex values
-  lbCol.style.flex = `0 0 ${newW}px`;
-  lbCol.style.width = `${newW}px`;
-  lbCol.style.minWidth = `${newW}px`;
-  lbCol.style.maxWidth = `${newW}px`;
-});
-document.addEventListener('mouseup', () => {
-  if (isResizing) {
-    isResizing = false;
-    resizer.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  }
-});
-
-/* ══════════════════════════════════════════════════
    TOAST
 ══════════════════════════════════════════════════ */
 function toast(msg, type='info') {
@@ -603,19 +573,12 @@ function addDemoPlayers() {
 ══════════════════════════════════════════════════ */
 renderQuestionList();
 addDemoPlayers();
-// Load first question by default
-loadQuestion(QUESTIONS[0]);
+// Load first question after DOM + CodeMirror fully rendered
+setTimeout(() => loadQuestion(QUESTIONS[0]), 50);
 
 /* ══════════════════════════════════════════════════
    MOBILE — refresh CodeMirror on resize
 ══════════════════════════════════════════════════ */
 window.addEventListener('resize', () => {
   editor.refresh();
-  // On mobile, clear any inline flex/width set by leaderboard drag resizer
-  if(window.innerWidth <= 768){
-    lbCol.style.flex = '';
-    lbCol.style.width = '';
-    lbCol.style.minWidth = '';
-    lbCol.style.maxWidth = '';
-  }
 });
