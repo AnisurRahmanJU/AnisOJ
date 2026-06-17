@@ -52,7 +52,78 @@ const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
   },
 });
 STATE.editor = editor;
-editor.setSize('100%', '100%');
+editor.setSize('100%', 300);
+
+/* ══════════════════════════════════════════════════
+   EDITOR VERTICAL RESIZE (height)
+══════════════════════════════════════════════════ */
+(function(){
+  const editorResizer = document.getElementById('editor-resizer');
+  const editorWrap    = document.getElementById('editor-wrap');
+  let isResizingV = false, startY = 0, startH = 0;
+
+  editorResizer.addEventListener('mousedown', e => {
+    if (window.innerWidth <= 768) return;
+    isResizingV = true;
+    startY = e.clientY;
+    startH = editorWrap.offsetHeight;
+    editorResizer.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!isResizingV) return;
+    const newH = Math.max(120, Math.min(700, startH + (e.clientY - startY)));
+    editorWrap.style.height = newH + 'px';
+    editor.setSize('100%', newH);
+  });
+  document.addEventListener('mouseup', () => {
+    if (isResizingV) {
+      isResizingV = false;
+      editorResizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+  });
+})();
+
+/* ══════════════════════════════════════════════════
+   EDITOR HORIZONTAL RESIZE (column width)
+══════════════════════════════════════════════════ */
+(function(){
+  const hResizer = document.getElementById('col-editor-resizer');
+  const colEditor = document.getElementById('col-editor');
+  let isResizingH = false, startX = 0, startW = 0;
+
+  hResizer.addEventListener('mousedown', e => {
+    if (window.innerWidth <= 768) return;
+    isResizingH = true;
+    startX = e.clientX;
+    startW = colEditor.offsetWidth;
+    hResizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!isResizingH) return;
+    const newW = Math.max(280, Math.min(800, startW + (e.clientX - startX)));
+    colEditor.style.width    = newW + 'px';
+    colEditor.style.minWidth = newW + 'px';
+    colEditor.style.maxWidth = newW + 'px';
+    editor.setSize('100%', editor.getScrollInfo().clientHeight);
+  });
+  document.addEventListener('mouseup', () => {
+    if (isResizingH) {
+      isResizingH = false;
+      hResizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      editor.refresh();
+    }
+  });
+})();
 
 /* ══════════════════════════════════════════════════
    THEME
@@ -456,18 +527,24 @@ const lbCol = document.getElementById('col-leaderboard');
 let isResizing = false, startX = 0, startW = 0;
 
 resizer.addEventListener('mousedown', e => {
+  if (window.innerWidth <= 768) return; // disable on mobile
   isResizing = true;
   startX = e.clientX;
   startW = lbCol.offsetWidth;
   resizer.classList.add('dragging');
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
+  e.preventDefault();
 });
 document.addEventListener('mousemove', e => {
   if (!isResizing) return;
   const delta = startX - e.clientX;
   const newW = Math.max(180, Math.min(600, startW + delta));
-  lbCol.style.width = newW + 'px';
+  // Must override flex:1 with explicit flex values
+  lbCol.style.flex = `0 0 ${newW}px`;
+  lbCol.style.width = `${newW}px`;
+  lbCol.style.minWidth = `${newW}px`;
+  lbCol.style.maxWidth = `${newW}px`;
 });
 document.addEventListener('mouseup', () => {
   if (isResizing) {
@@ -504,7 +581,6 @@ function addDemoPlayers() {
     { name: 'Aminul', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
     { name: 'Anika', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
     { name: 'Devid', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
-    
   ];
   demos.forEach(d => {
     const u = { name: d.name, results: {} };
@@ -530,3 +606,16 @@ addDemoPlayers();
 // Load first question by default
 loadQuestion(QUESTIONS[0]);
 
+/* ══════════════════════════════════════════════════
+   MOBILE — refresh CodeMirror on resize
+══════════════════════════════════════════════════ */
+window.addEventListener('resize', () => {
+  editor.refresh();
+  // On mobile, clear any inline flex/width set by leaderboard drag resizer
+  if(window.innerWidth <= 768){
+    lbCol.style.flex = '';
+    lbCol.style.width = '';
+    lbCol.style.minWidth = '';
+    lbCol.style.maxWidth = '';
+  }
+});
