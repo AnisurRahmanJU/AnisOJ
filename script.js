@@ -13,8 +13,8 @@ const QUESTIONS = [
   {id:10,title:"Group Anagrams",difficulty:"Hard",description:`Write a function <code>groupAnagrams(strs)</code> that groups anagrams together. Return an array of groups. Order within groups and between groups does not matter.`,examples:[{input:'groupAnagrams(["eat","tea","tan","ate","nat","bat"])',output:'[["bat"],["nat","tan"],["ate","eat","tea"]]'},{input:'groupAnagrams([""])',output:'[[""]]'},{input:'groupAnagrams(["a"])',output:'[["a"]]'}],constraints:["1 ≤ strs.length ≤ 10⁴","0 ≤ strs[i].length ≤ 100","Lowercase letters only"],testCases:[{input:[["eat","tea","tan","ate","nat","bat"]],expected:[["bat"],["nat","tan"],["ate","eat","tea"]],isGroupAnagram:true},{input:[[""]], expected:[[""]], isGroupAnagram:true},{input:[["a"]],expected:[["a"]],isGroupAnagram:true},{input:[["abc","bca","cab","xyz"]],expected:[["abc","bca","cab"],["xyz"]],isGroupAnagram:true},{input:[["ab","ba","cd","dc","ef"]],expected:[["ab","ba"],["cd","dc"],["ef"]],isGroupAnagram:true}],functionName:"groupAnagrams"},
 ];
 
-<!-- MAIN SCRIPT -->
 
+<!-- MAIN SCRIPT -->
 /* ══════════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════════ */
@@ -394,8 +394,8 @@ function submitCode() {
     if (allPass) {
       if (!prev || prev.status !== 'ac') {
         STATE.results[qId] = { status: 'ac', time: elapsed, attempts: (prev?.attempts||0)+1 };
-        toast('✓ Accepted! Great job!', 'success');
         updateLeaderboard();
+        toast('✓ Accepted! Great job!', 'success');
       } else {
         toast('Already accepted!', 'info');
       }
@@ -404,6 +404,7 @@ function submitCode() {
     } else {
       const att = (prev?.attempts||0)+1;
       STATE.results[qId] = { status: 'wa', time: elapsed, attempts: att };
+      updateLeaderboard();
       verdictEl.textContent = `✗ Wrong Answer (attempt ${att})`;
       verdictEl.className = 'wa';
       toast(`✗ Wrong Answer — keep trying!`, 'error');
@@ -475,7 +476,7 @@ function renderLeaderboard() {
     let rankBadge = `<span class="rank-badge${rank<=3?' rank-'+rank:''}">${rank}</span>`;
     let cells = '';
     for(let i=1;i<=10;i++) {
-      const r = u.results[i];
+      const r = u.results[i] ?? u.results[String(i)];
       if (!r) {
         cells += `<td><span class="lb-cell">—</span></td>`;
       } else if (r.status==='ac') {
@@ -486,35 +487,111 @@ function renderLeaderboard() {
         cells += `<td title="${r.attempts} attempts"><span class="lb-cell wrong">✗</span></td>`;
       }
     }
-    const score = Object.values(u.results).filter(r=>r.status==='ac').length;
+    const score = Object.values(u.results).filter(r=>r?.status==='ac').length;
     return `<tr><td>${rankBadge}${u.name}</td>${cells}<td class="lb-score-col">${score}</td></tr>`;
   });
 
   wrap.innerHTML = `<table class="lb-table"><thead>${hdr}</thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
-function updateLeaderboard() {
-  if (!STATE.username) return;
-  let user = STATE.leaderboard.find(u=>u.name===STATE.username);
-  if (!user) {
-    user = { name: STATE.username, results: {} };
-    STATE.leaderboard.push(user);
-  }
-  // copy current results
-  Object.assign(user.results, JSON.parse(JSON.stringify(STATE.results)));
+/* ══════════════════════════════════════════════════
+   LEADERBOARD STORAGE (localStorage + BroadcastChannel)
+   — works across tabs instantly
+   — works across devices if Firebase config is set
+   — no backend needed
+══════════════════════════════════════════════════ */
+const LS_KEY = 'anisoj_leaderboard_v1';
+
+/* BroadcastChannel: instant sync across tabs on same browser */
+const bc = (typeof BroadcastChannel !== 'undefined')
+  ? new BroadcastChannel('anisoj_lb')
+  : null;
+
+function lbSave(data) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e){}
+  if (bc) bc.postMessage({ type: 'lb_update', data });
 }
 
-// username registration
+function lbLoad() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+/* Listen for updates from other tabs */
+if (bc) {
+  bc.onmessage = (e) => {
+    if (e.data?.type === 'lb_update') {
+      applyLbData(e.data.data);
+    }
+  };
+}
+
+/* Also poll localStorage every 3s (cross-browser fallback) */
+setInterval(() => {
+  const data = lbLoad();
+  applyLbData(data);
+}, 3000);
+
+function normalizeResults(raw) {
+  /* JSON parse করলে keys string হয় — সব numeric করে নাও */
+  const out = {};
+  Object.entries(raw || {}).forEach(([k, v]) => { out[Number(k)] = v; });
+  return out;
+}
+
+function applyLbData(data) {
+  STATE.leaderboard = Object.values(data).map(u => {
+    const normalized = normalizeResults(u.results);
+    /* if this is the current user, use in-memory STATE.results
+       so polling never overwrites what they just submitted */
+    if (STATE.username && u.name === STATE.username) {
+      return { name: u.name, results: normalizeResults(STATE.results) };
+    }
+    return { name: u.name, results: normalized };
+  });
+  renderLeaderboard();
+}
+
+function updateLeaderboard() {
+  if (!STATE.username) return;
+
+  const normalizedResults = normalizeResults(STATE.results);
+
+  /* 1. STATE.leaderboard immediately update */
+  let entry = STATE.leaderboard.find(u => u.name === STATE.username);
+  if (entry) {
+    entry.results = normalizedResults;
+  } else {
+    STATE.leaderboard.push({ name: STATE.username, results: normalizedResults });
+  }
+
+  /* 2. localStorage save */
+  const data = lbLoad();
+  data[STATE.username] = { name: STATE.username, results: normalizedResults, updatedAt: Date.now() };
+  lbSave(data);
+}
+
+/* ── username registration ── */
 document.getElementById('btn-register').onclick = () => {
   const name = document.getElementById('username-input').value.trim();
   if (!name) return toast('Enter a username first', 'info');
   if (name.length < 2) return toast('Username too short', 'error');
   STATE.username = name;
-  // add to leaderboard if not present
-  if (!STATE.leaderboard.find(u=>u.name===name)) {
+
+  /* add to STATE.leaderboard if not already there */
+  if (!STATE.leaderboard.find(u => u.name === name)) {
     STATE.leaderboard.push({ name, results: {} });
   }
-  updateLeaderboard();
+
+  /* persist to localStorage */
+  const data = lbLoad();
+  if (!data[name]) {
+    data[name] = { name, results: {}, updatedAt: Date.now() };
+    lbSave(data);
+  }
+
   renderLeaderboard();
   toast(`Welcome, ${name}! 🎉`, 'success');
   document.getElementById('username-input').disabled = true;
@@ -537,43 +614,52 @@ function toast(msg, type='info') {
 }
 
 /* ══════════════════════════════════════════════════
-   DEMO LEADERBOARD DATA (pre-populated for visual)
+   SEED DEMO PLAYERS (only if storage is empty)
 ══════════════════════════════════════════════════ */
-function addDemoPlayers() {
+function seedDemoPlayers() {
+  const existing = lbLoad();
+  if (Object.keys(existing).length > 0) return; /* already seeded */
+
   const demos = [
-    { name: 'Nusrat', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Likhon', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
-    { name: 'Rafi', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
-    { name: 'Mohammad', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Sonjoy', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Abir', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
-    { name: 'Sumaiya', solved: [1,2,3,5,6], times: [400,700,1200,2000,2800] },
-    { name: 'Aminul', solved: [1,2,3,4,5,6,7,8], times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Anika', solved: [1,2,3,4,5,6,7], times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Devid', solved: [1,2,3,4,5,6], times: [600,800,1000,1500,1900,2400] },
+    { name: 'Anika',  solved: [1,2,3,4,5,6,7],        times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Bob',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
+    { name: 'Rafi',   solved: [1,2,3,5,6],              times: [400,700,1200,2000,2800]         },
+    { name: 'Likhon',  solved: [1,2,3,4,5,6,7,8],       times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Abir',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
+    { name: 'Monir',  solved: [1,2,3,4,5,6,7],        times: [300,480,720,900,1100,1350,2100] },
+    { name: 'Sumaiya',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
+    { name: 'Rafi',   solved: [1,2,3,5,6],              times: [400,700,1200,2000,2800]         },
+    { name: 'Mohammad',  solved: [1,2,3,4,5,6,7,8],       times: [200,350,600,800,1100,1500,2000,2800] },
+    { name: 'Karim',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
+  
   ];
+
+  const data = {};
   demos.forEach(d => {
-    const u = { name: d.name, results: {} };
-    d.solved.forEach((qid,i) => {
-      u.results[qid] = { status:'ac', time: d.times[i], attempts: 1 };
+    const results = {};
+    d.solved.forEach((qid, i) => {
+      results[qid] = { status: 'ac', time: d.times[i], attempts: 1 };
     });
-    // add a few WA
-    for(let q=1;q<=10;q++) {
-      if (!u.results[q] && Math.random()>0.6) {
-        u.results[q] = { status:'wa', time:Math.floor(Math.random()*5000), attempts: Math.floor(Math.random()*3)+1 };
+    for (let q = 1; q <= 10; q++) {
+      if (!results[q] && Math.random() > 0.55) {
+        results[q] = { status: 'wa', time: Math.floor(Math.random()*5000), attempts: Math.floor(Math.random()*3)+1 };
       }
     }
-    STATE.leaderboard.push(u);
+    data[d.name] = { name: d.name, results, updatedAt: Date.now() };
   });
-  renderLeaderboard();
+
+  lbSave(data);
+  applyLbData(data);
 }
 
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
 renderQuestionList();
-addDemoPlayers();
-// Load first question after DOM + CodeMirror fully rendered
+seedDemoPlayers();
+applyLbData(lbLoad());
+
+/* Load first question after DOM + CodeMirror fully rendered */
 setTimeout(() => loadQuestion(QUESTIONS[0]), 50);
 
 /* ══════════════════════════════════════════════════
