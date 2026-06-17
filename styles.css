@@ -415,7 +415,7 @@ body{
   overflow:hidden;
   position:relative;
 }
-/* resize handle */
+/* resize handle 
 #lb-resizer{
   position:absolute;left:0;top:0;bottom:0;
   width:5px;cursor:col-resize;z-index:10;
@@ -426,7 +426,7 @@ body{
 #lb-resizer.dragging{background:var(--accent);}
 
 .lb-inner{display:flex;flex-direction:column;overflow:hidden;height:100%;padding-left:5px;}
-.lb-content{overflow-y:auto;flex:1;padding:10px;}
+.lb-content{overflow-y:auto;flex:1;padding:10px;}*/
 
 /* username input */
 .username-row{
