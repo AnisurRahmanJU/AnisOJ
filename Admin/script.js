@@ -1,5 +1,12 @@
-<!-- QUESTIONS DATA -->
-/* ── Default questions (fallback if admin panel hasn't set any) ── */
+
+/* ════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════ */
+const LS_KEY    = 'anisoj_leaderboard_v1';
+const LS_Q_KEY  = 'anisoj_questions_v1';
+const LS_PW_KEY = 'anisoj_contest_pw_v1';
+
+/* default questions (same as index.html) */
 const DEFAULT_QUESTIONS = [
   {id:1,title:"Array Sum",difficulty:"Easy",description:`Write a function <code>arraySum(arr)</code> that takes an array of numbers and returns their sum.`,examples:[{input:"arraySum([1, 2, 3, 4, 5])",output:"15"},{input:"arraySum([-1, 0, 1])",output:"0"},{input:"arraySum([10, 20, 30])",output:"60"}],constraints:["Array length: 1 ≤ n ≤ 1000","Elements: -10⁶ ≤ arr[i] ≤ 10⁶"],testCases:[{input:[[1,2,3,4,5]],expected:15},{input:[[-1,0,1]],expected:0},{input:[[10,20,30]],expected:60},{input:[[0]],expected:0},{input:[[-5,-10,15]],expected:0}],functionName:"arraySum"},
   {id:2,title:"Palindrome Check",difficulty:"Easy",description:`Write a function <code>isPalindrome(str)</code> that returns <code>true</code> if the string is a palindrome (reads the same forwards and backwards), ignoring case. Otherwise return <code>false</code>.`,examples:[{input:'isPalindrome("racecar")',output:"true"},{input:'isPalindrome("Hello")',output:"false"},{input:'isPalindrome("Madam")',output:"true"}],constraints:["String length: 1 ≤ n ≤ 10⁴","Only alphabetic characters"],testCases:[{input:["racecar"],expected:true},{input:["Hello"],expected:false},{input:["Madam"],expected:true},{input:["a"],expected:true},{input:["abba"],expected:true}],functionName:"isPalindrome"},
@@ -13,756 +20,841 @@ const DEFAULT_QUESTIONS = [
   {id:10,title:"Group Anagrams",difficulty:"Hard",description:`Write a function <code>groupAnagrams(strs)</code> that groups anagrams together. Return an array of groups. Order within groups and between groups does not matter.`,examples:[{input:'groupAnagrams(["eat","tea","tan","ate","nat","bat"])',output:'[["bat"],["nat","tan"],["ate","eat","tea"]]'},{input:'groupAnagrams([""])',output:'[[""]]'},{input:'groupAnagrams(["a"])',output:'[["a"]]'}],constraints:["1 ≤ strs.length ≤ 10⁴","0 ≤ strs[i].length ≤ 100","Lowercase letters only"],testCases:[{input:[["eat","tea","tan","ate","nat","bat"]],expected:[["bat"],["nat","tan"],["ate","eat","tea"]],isGroupAnagram:true},{input:[[""]], expected:[[""]], isGroupAnagram:true},{input:[["a"]],expected:[["a"]],isGroupAnagram:true},{input:[["abc","bca","cab","xyz"]],expected:[["abc","bca","cab"],["xyz"]],isGroupAnagram:true},{input:[["ab","ba","cd","dc","ef"]],expected:[["ab","ba"],["cd","dc"],["ef"]],isGroupAnagram:true}],functionName:"groupAnagrams"},
 ];
 
-/* ── Load questions: admin panel overrides via localStorage ── */
-(function() {
-  const LS_Q_KEY = 'anisoj_questions_v1';
-  try {
-    const stored = localStorage.getItem(LS_Q_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        window.QUESTIONS = parsed;
-        return;
-      }
-    }
-  } catch(e) {}
-  window.QUESTIONS = DEFAULT_QUESTIONS;
-})();
-
-const QUESTIONS = window.QUESTIONS;
-
-/* ── Listen for admin panel question updates (BroadcastChannel) ── */
-(function() {
-  if (typeof BroadcastChannel === 'undefined') return;
-  const bc = new BroadcastChannel('anisoj_lb');
-  bc.onmessage = (e) => {
-    if (e.data?.type === 'q_update' && Array.isArray(e.data.data)) {
-      // Reload page to apply new questions (safest approach)
-      window.location.reload();
-    }
-  };
-})();
-
-
-<!-- MAIN SCRIPT -->
-
-/* ══════════════════════════════════════════════════
+/* ════════════════════════════════════════
    STATE
-══════════════════════════════════════════════════ */
-const STATE = {
-  currentQ: null,
-  theme: 'dark',
-  editor: null,
-  timerInterval: null,
-  totalSeconds: 7200,
-  secondsLeft: 7200,
-  contestEnded: false,
-  username: '',
-  results: {}, // {qId: {status:'ac'|'wa', time:secondsElapsed, attempts:n}}
-  leaderboard: [], // [{name, results:{qId:{status,time}}}]
-  consoleLog: [],
+════════════════════════════════════════ */
+let leaderboardData = {};   // {name: {name, results, updatedAt}}
+let questions = [];          // active question list
+let selectedQIdx = null;     // index in questions array
+let confirmCallback = null;
+
+/* ════════════════════════════════════════
+   STORAGE HELPERS  (localStorage fallback + JSONBin cloud)
+════════════════════════════════════════ */
+
+/* ── localStorage ── */
+function lbLoad() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; }
+}
+function lbSave(data) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+  if (bc) bc.postMessage({ type: 'lb_update', data });
+}
+function qLoad() {
+  try { const r = localStorage.getItem(LS_Q_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+}
+function qSave(qs) {
+  try { localStorage.setItem(LS_Q_KEY, JSON.stringify(qs)); } catch(e) {}
+  if (bc) bc.postMessage({ type: 'q_update', data: qs });
+}
+
+/* ── JSONBin Cloud Config ── */
+const CFG_KEY = 'anisoj_cloud_cfg_v1';
+
+function cfgLoad() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); } catch(e) { return null; }
+}
+function cfgSave(cfg) {
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e) {}
+}
+
+function isCloudReady() {
+  const c = cfgLoad();
+  return !!(c && c.apiKey && c.binId);
+}
+
+/* ── JSONBin API calls ── */
+async function cloudRead() {
+  const c = cfgLoad();
+  if (!c?.apiKey || !c?.binId) return null;
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${c.binId}/latest`, {
+      headers: { 'X-Master-Key': c.apiKey, 'X-Bin-Meta': 'false' }
+    });
+    if (!res.ok) throw new Error(res.status);
+    return await res.json();
+  } catch(e) { console.warn('CloudRead error:', e); return null; }
+}
+
+async function cloudWrite(data) {
+  const c = cfgLoad();
+  if (!c?.apiKey || !c?.binId) return false;
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${c.binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': c.apiKey
+      },
+      body: JSON.stringify(data)
+    });
+    return res.ok;
+  } catch(e) { console.warn('CloudWrite error:', e); return false; }
+}
+
+async function cloudCreateBin(apiKey) {
+  const res = await fetch('https://api.jsonbin.io/v3/b', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': apiKey,
+      'X-Bin-Name': 'AnisOJ-Leaderboard',
+      'X-Private': 'false'
+    },
+    body: JSON.stringify({ leaderboard: {}, questions: [], contestPw: '', createdAt: Date.now() })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const j = await res.json();
+  return j.metadata.id;
+}
+
+/* ── Merge cloud + local, cloud wins for other users ── */
+function mergeData(cloud, local) {
+  const merged = Object.assign({}, local);
+  Object.entries(cloud || {}).forEach(([k, v]) => {
+    if (!merged[k] || (v.updatedAt || 0) > (merged[k].updatedAt || 0)) {
+      merged[k] = v;
+    }
+  });
+  return merged;
+}
+
+/* ── Full cloud sync (read → merge → write) ── */
+let cloudSyncing = false;
+async function cloudSync(force = false) {
+  if (cloudSyncing) return;
+  if (!isCloudReady()) return;
+  cloudSyncing = true;
+  updateCloudStatusBadge('syncing');
+  try {
+    const remote = await cloudRead();
+    if (!remote) { updateCloudStatusBadge('error'); return; }
+
+    const localLb = lbLoad();
+    const mergedLb = mergeData(remote.leaderboard || {}, localLb);
+
+    /* If local has newer entries, push back to cloud */
+    const needPush = JSON.stringify(mergedLb) !== JSON.stringify(remote.leaderboard || {});
+    if (needPush || force) {
+      const payload = {
+        leaderboard: mergedLb,
+        questions: remote.questions || [],
+        contestPw: remote.contestPw || '',
+        updatedAt: Date.now()
+      };
+      await cloudWrite(payload);
+    }
+
+    /* Apply merged data */
+    try { localStorage.setItem(LS_KEY, JSON.stringify(mergedLb)); } catch(e) {}
+    leaderboardData = mergedLb;
+    renderLeaderboard();
+
+    /* Sync questions if cloud has them */
+    if (remote.questions && remote.questions.length > 0) {
+      try { localStorage.setItem(LS_Q_KEY, JSON.stringify(remote.questions)); } catch(e) {}
+    }
+
+    /* Sync contest password */
+    if (remote.contestPw !== undefined) {
+      try { localStorage.setItem(LS_PW_KEY, remote.contestPw); } catch(e) {}
+      renderPwPanel();
+    }
+
+    updateCloudStatusBadge('ok');
+    const now = new Date().toLocaleTimeString();
+    const el = document.getElementById('cloud-last-sync');
+    if (el) el.textContent = `Last synced: ${now}`;
+  } catch(e) {
+    updateCloudStatusBadge('error');
+  } finally {
+    cloudSyncing = false;
+  }
+}
+
+/* Push leaderboard + questions + pw to cloud (called after any save) */
+async function cloudPush() {
+  if (!isCloudReady()) return;
+  const payload = {
+    leaderboard: lbLoad(),
+    questions: qLoad() || [],
+    contestPw: pwLoad(),
+    updatedAt: Date.now()
+  };
+  await cloudWrite(payload);
+  updateCloudStatusBadge('ok');
+  const el = document.getElementById('cloud-last-sync');
+  if (el) el.textContent = `Last synced: ${new Date().toLocaleTimeString()}`;
+}
+
+function updateCloudStatusBadge(state) {
+  const badge = document.getElementById('cloud-status-badge');
+  if (!badge) return;
+  const map = {
+    ok:      ['var(--green-cell)', 'var(--green-bright)', 'var(--green-cell-border)', '<i class="fas fa-circle-check"></i> Connected'],
+    syncing: ['var(--bg3)', 'var(--accent)', 'var(--border)', '<i class="fas fa-rotate fa-spin"></i> Syncing...'],
+    error:   ['var(--red-cell)', 'var(--red-bright)', 'var(--red-cell-border)', '<i class="fas fa-triangle-exclamation"></i> Error'],
+    off:     ['var(--red-cell)', 'var(--red-bright)', 'var(--red-cell-border)', '<i class="fas fa-circle-xmark"></i> Not Connected'],
+  };
+  const [bg, color, border, html] = map[state] || map.off;
+  badge.style.background = bg;
+  badge.style.color = color;
+  badge.style.border = `1px solid ${border}`;
+  badge.innerHTML = html;
+}
+
+/* Also update sync status badge in header leaderboard panel */
+function updateSyncBar() {
+  const bar = document.querySelector('.sync-bar');
+  if (!bar) return;
+  if (isCloudReady()) {
+    bar.innerHTML = '<div class="sync-dot"></div> ☁ Cloud sync active — data visible on all devices';
+  } else {
+    bar.innerHTML = '<div class="sync-dot" style="background:var(--yellow);"></div> localStorage only — <a href="#" onclick="document.querySelector(\'[data-tab=setup]\').click();return false;" style="color:var(--accent);">Setup Cloud Sync</a>';
+  }
+}
+
+/* ── Cloud Setup UI handlers ── */
+function toggleCfgEye(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  ico.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+function loadCfgToForm() {
+  const c = cfgLoad();
+  if (c) {
+    document.getElementById('cfg-apikey').value = c.apiKey || '';
+    document.getElementById('cfg-binid').value  = c.binId  || '';
+  }
+  updateCloudStatusBadge(isCloudReady() ? 'ok' : 'off');
+}
+
+document.getElementById('btn-create-bin').onclick = async () => {
+  const key = document.getElementById('cfg-apikey').value.trim();
+  if (!key) return toast('API Key দিন আগে', 'error');
+  const btn = document.getElementById('btn-create-bin');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Creating...';
+  try {
+    const binId = await cloudCreateBin(key);
+    document.getElementById('cfg-binid').value = binId;
+    cfgSave({ apiKey: key, binId });
+    updateCloudStatusBadge('ok');
+    updateSyncBar();
+    toast('Bin তৈরি হয়েছে! Bin ID সেভ হয়েছে।', 'success');
+    await cloudPush();
+  } catch(e) {
+    toast('Error: ' + e.message + ' — API Key ঠিক আছে?', 'error');
+    updateCloudStatusBadge('error');
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus-circle"></i> Create New Bin';
 };
 
-/* ══════════════════════════════════════════════════
-   CODEMIRROR INIT
-══════════════════════════════════════════════════ */
-const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-  mode: 'javascript',
-  theme: 'dracula',
-  lineNumbers: true,
-  autoCloseBrackets: true,
-  matchBrackets: true,
-  styleActiveLine: true,
-  indentUnit: 2,
-  tabSize: 2,
-  extraKeys: {
-    'Ctrl-Enter': () => submitCode(),
-    'Ctrl-/': (cm) => cm.execCommand('toggleComment'),
-    Tab: (cm) => cm.replaceSelection('  '),
-  },
-});
-STATE.editor = editor;
+document.getElementById('btn-save-cfg').onclick = async () => {
+  const key   = document.getElementById('cfg-apikey').value.trim();
+  const binId = document.getElementById('cfg-binid').value.trim();
+  if (!key)   return toast('API Key দিন', 'error');
+  if (!binId) return toast('Bin ID দিন, অথবা Create New Bin করুন', 'error');
+  cfgSave({ apiKey: key, binId });
+  updateCloudStatusBadge('syncing');
+  updateSyncBar();
+  toast('Config সেভ হয়েছে। Sync করছি...', 'info');
+  await cloudSync(true);
+};
 
-/* Defer setSize until DOM layout is complete */
-requestAnimationFrame(() => {
-  editor.setSize('100%', 300);
-  editor.refresh();
-});
+document.getElementById('btn-test-cfg').onclick = async () => {
+  const btn = document.getElementById('btn-test-cfg');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Testing...';
+  const data = await cloudRead();
+  if (data !== null) {
+    toast('সংযোগ সফল! Cloud ডেটা পাওয়া গেছে।', 'success');
+    updateCloudStatusBadge('ok');
+  } else {
+    toast('সংযোগ ব্যর্থ। API Key বা Bin ID চেক করুন।', 'error');
+    updateCloudStatusBadge('error');
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-wifi"></i> Test Connection';
+};
 
-/* ══════════════════════════════════════════════════
-   EDITOR VERTICAL RESIZE (height)
-══════════════════════════════════════════════════ */
-(function(){
-  const editorResizer = document.getElementById('editor-resizer');
-  const editorWrap    = document.getElementById('editor-wrap');
-  let isResizingV = false, startY = 0, startH = 0;
+document.getElementById('btn-clear-cfg').onclick = () => {
+  confirm('Cloud Config মুছবেন?', 'API Key ও Bin ID মুছে যাবে। localStorage তে ডেটা থাকবে।', 'Clear', () => {
+    localStorage.removeItem(CFG_KEY);
+    document.getElementById('cfg-apikey').value = '';
+    document.getElementById('cfg-binid').value = '';
+    updateCloudStatusBadge('off');
+    updateSyncBar();
+    toast('Cloud config মুছা হয়েছে।', 'success');
+  });
+};
 
-  editorResizer.addEventListener('mousedown', e => {
-    if (window.innerWidth <= 768) return;
-    isResizingV = true;
-    startY = e.clientY;
-    startH = editorWrap.offsetHeight;
-    editorResizer.classList.add('dragging');
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if (!isResizingV) return;
-    const newH = Math.max(120, Math.min(700, startH + (e.clientY - startY)));
-    editorWrap.style.height = newH + 'px';
-    editor.setSize('100%', newH);
-  });
-  document.addEventListener('mouseup', () => {
-    if (isResizingV) {
-      isResizingV = false;
-      editorResizer.classList.remove('dragging');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-  });
-})();
+/* BroadcastChannel — live sync across tabs */
+const bc = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('anisoj_lb') : null;
+if (bc) {
+  bc.onmessage = (e) => {
+    if (e.data?.type === 'lb_update') { leaderboardData = e.data.data; renderLeaderboard(); }
+    if (e.data?.type === 'q_update')  { questions = e.data.data; renderQList(); updateQBadge(); }
+    if (e.data?.type === 'pw_update') { renderPwPanel(); }
+  };
+}
 
-/* ══════════════════════════════════════════════════
-   EDITOR HORIZONTAL RESIZE (column width)
-══════════════════════════════════════════════════ */
-(function(){
-  const hResizer = document.getElementById('col-editor-resizer');
-  const colEditor = document.getElementById('col-editor');
-  let isResizingH = false, startX = 0, startW = 0;
+/* Poll every 5s — cloud sync if ready, else localStorage */
+setInterval(async () => {
+  if (isCloudReady()) {
+    await cloudSync();
+  } else {
+    leaderboardData = lbLoad();
+    renderLeaderboard();
+  }
+}, 5000);
 
-  hResizer.addEventListener('mousedown', e => {
-    if (window.innerWidth <= 768) return;
-    isResizingH = true;
-    startX = e.clientX;
-    startW = colEditor.offsetWidth;
-    hResizer.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if (!isResizingH) return;
-    const newW = Math.max(280, Math.min(800, startW + (e.clientX - startX)));
-    colEditor.style.width    = newW + 'px';
-    colEditor.style.minWidth = newW + 'px';
-    colEditor.style.maxWidth = newW + 'px';
-    editor.setSize('100%', editor.getScrollInfo().clientHeight);
-  });
-  document.addEventListener('mouseup', () => {
-    if (isResizingH) {
-      isResizingH = false;
-      hResizer.classList.remove('dragging');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      editor.refresh();
-    }
-  });
-})();
-
-/* ══════════════════════════════════════════════════
+/* ════════════════════════════════════════
    THEME
-══════════════════════════════════════════════════ */
+════════════════════════════════════════ */
 function setTheme(t) {
-  STATE.theme = t;
   document.documentElement.setAttribute('data-theme', t);
-  const icon = document.getElementById('theme-icon');
-  icon.className = t === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-  editor.setOption('theme', t === 'dark' ? 'dracula' : 'eclipse');
+  document.getElementById('theme-icon').className = t === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
   localStorage.setItem('anisoj-theme', t);
 }
-document.getElementById('theme-btn').onclick = () =>
-  setTheme(STATE.theme === 'dark' ? 'light' : 'dark');
+document.getElementById('theme-btn').onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+};
 const savedTheme = localStorage.getItem('anisoj-theme');
 if (savedTheme) setTheme(savedTheme);
 
-/* ══════════════════════════════════════════════════
-   TIMER
-══════════════════════════════════════════════════ */
-function formatTime(s) {
-  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-}
-function startTimer() {
-  const timerEl = document.getElementById('timer');
-  STATE.timerInterval = setInterval(() => {
-    STATE.secondsLeft--;
-    timerEl.textContent = formatTime(STATE.secondsLeft);
-    if (STATE.secondsLeft <= 300 && STATE.secondsLeft > 60) timerEl.className = 'warning';
-    else if (STATE.secondsLeft <= 60) timerEl.className = 'danger';
-    if (STATE.secondsLeft <= 0) endContest();
-  }, 1000);
-}
-function endContest() {
-  clearInterval(STATE.timerInterval);
-  STATE.contestEnded = true;
-  document.getElementById('btn-submit').disabled = true;
-  // show modal
-  const solved = Object.values(STATE.results).filter(r=>r.status==='ac').length;
-  document.getElementById('final-solved').textContent = solved;
-  document.getElementById('final-score').textContent = `${solved}/10`;
-  const elapsed = STATE.totalSeconds - STATE.secondsLeft;
-  document.getElementById('final-time').textContent = formatTime(elapsed);
-  document.getElementById('time-up-modal').classList.add('open');
-}
-startTimer();
-
-/* ══════════════════════════════════════════════════
-   QUESTION LIST
-══════════════════════════════════════════════════ */
-function renderQuestionList() {
-  const list = document.getElementById('q-list');
-  list.innerHTML = '';
-  QUESTIONS.forEach(q => {
-    const res = STATE.results[q.id];
-    const item = document.createElement('div');
-    item.className = 'q-item' +
-      (STATE.currentQ?.id===q.id?' active':'') +
-      (res?.status==='ac'?' solved':'') +
-      (res?.status==='wa'?' wrong':'');
-    item.dataset.qid = q.id;
-
-    let statusHtml = '';
-    if (res?.status === 'ac') {
-      const mins = Math.floor(res.time/60);
-      statusHtml = `<div class="q-status ok"><i class="fas fa-check-circle"></i> Accepted · ${mins}m elapsed</div>`;
-    } else if (res?.status === 'wa') {
-      statusHtml = `<div class="q-status fail"><i class="fas fa-times-circle"></i> Wrong Answer (${res.attempts} tries)</div>`;
-    }
-
-    item.innerHTML = `
-      <div class="q-item-top">
-        <div class="q-num">${q.id}</div>
-        <span class="q-name">${q.title}</span>
-        <span class="q-badge badge-${q.difficulty.toLowerCase()}">${q.difficulty}</span>
-      </div>
-      ${statusHtml}
-    `;
-    item.onclick = () => loadQuestion(q);
-    list.appendChild(item);
-  });
-
-  const solved = Object.values(STATE.results).filter(r=>r.status==='ac').length;
-  document.getElementById('q-progress').textContent = `${solved} / 10`;
-  document.getElementById('total-score').textContent = `${solved}/10`;
-}
-
-/* ══════════════════════════════════════════════════
-   LOAD QUESTION
-══════════════════════════════════════════════════ */
-const DEFAULT_STARTERS = {
-  arraySum: `function arraySum(arr) {\n  // Your code here\n  \n}`,
-  isPalindrome: `function isPalindrome(str) {\n  // Your code here\n  \n}`,
-  fizzBuzz: `function fizzBuzz(n) {\n  // Your code here\n  \n}`,
-  fibonacci: `function fibonacci(n) {\n  // Your code here\n  \n}`,
-  countVowels: `function countVowels(str) {\n  // Your code here\n  \n}`,
-  findMax: `function findMax(arr) {\n  // Your code here\n  \n}`,
-  reverseWords: `function reverseWords(str) {\n  // Your code here\n  \n}`,
-  twoSum: `function twoSum(nums, target) {\n  // Your code here\n  \n}`,
-  flattenArray: `function flattenArray(arr) {\n  // Your code here\n  \n}`,
-  groupAnagrams: `function groupAnagrams(strs) {\n  // Your code here\n  \n}`,
-};
-
-function loadQuestion(q) {
-  STATE.currentQ = q;
-  document.getElementById('q-display-title').textContent = `#${q.id} — ${q.title}`;
-
-  // badge
-  const badge = document.getElementById('q-badge-display');
-  badge.innerHTML = `<span class="q-badge badge-${q.difficulty.toLowerCase()}">${q.difficulty}</span>`;
-
-  // description
-  const desc = document.getElementById('q-description');
-  const examplesHtml = q.examples.map(e => `
-    <div class="example-box">
-      <div class="ex-label">Input</div>
-      <div class="ex-in">${e.input}</div>
-      <div class="ex-label" style="margin-top:4px;">Output</div>
-      <div class="ex-out">${e.output}</div>
-    </div>`).join('');
-  const constraintsHtml = q.constraints.map(c => `<span class="constraint-chip">${c}</span>`).join('');
-  desc.innerHTML = `
-    <div style="margin-bottom:8px;">${q.description}</div>
-    <h4>EXAMPLES</h4>
-    <div class="examples-row">${examplesHtml}</div>
-    <h4 style="margin-top:10px;">CONSTRAINTS</h4>
-    <div class="constraints-list">${constraintsHtml}</div>
-  `;
-
-  // load saved or default code
-  const savedCode = localStorage.getItem(`anisoj-code-${q.id}`);
-  editor.setValue(savedCode || DEFAULT_STARTERS[q.functionName] || `function ${q.functionName}() {\n  \n}`);
-  editor.clearHistory();
-  // Double refresh — immediate + after layout paint
-  editor.refresh();
-  requestAnimationFrame(() => editor.refresh());
-
-  // output reset
-  document.getElementById('output-area').innerHTML = `<div class="empty-state" style="height:80px;"><p>Run or Submit to see results</p></div>`;
-  document.getElementById('verdict').textContent = '';
-  document.getElementById('verdict').className = '';
-  document.getElementById('btn-submit').disabled = STATE.contestEnded;
-
-  renderQuestionList();
-}
-
-/* ══════════════════════════════════════════════════
-   SAVE CODE ON CHANGE
-══════════════════════════════════════════════════ */
-editor.on('change', () => {
-  if (STATE.currentQ) {
-    localStorage.setItem(`anisoj-code-${STATE.currentQ.id}`, editor.getValue());
-  }
-});
-
-/* ══════════════════════════════════════════════════
-   RUN / JUDGE
-══════════════════════════════════════════════════ */
-function deepEqual(a, b) {
-  if (a === b) return true;
-  if (typeof a !== typeof b) return false;
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false;
-    return a.every((v,i) => deepEqual(v, b[i]));
-  }
-  if (typeof a === 'object' && a && b) {
-    const ka = Object.keys(a).sort(), kb = Object.keys(b).sort();
-    return deepEqual(ka,kb) && ka.every(k => deepEqual(a[k],b[k]));
-  }
-  return false;
-}
-
-function groupAnagramEqual(got, expected) {
-  if (!Array.isArray(got) || !Array.isArray(expected)) return false;
-  if (got.length !== expected.length) return false;
-  const sort = arr => arr.map(g => [...g].sort().join(',')).sort().join('|');
-  return sort(got) === sort(expected);
-}
-
-function runTests(code, q, isSubmit) {
-  const logs = [];
-  const origLog = console.log;
-  console.log = (...args) => { logs.push(args.map(String).join(' ')); };
-
-  let results = [];
-  try {
-    // eslint-disable-next-line no-new-func
-    const fn = new Function(code + `\nreturn ${q.functionName};`)();
-    if (typeof fn !== 'function') throw new Error(`${q.functionName} is not a function`);
-
-    const cases = isSubmit ? q.testCases : q.testCases.slice(0, 3);
-    results = cases.map((tc, i) => {
-      try {
-        const args = tc.input.map(a => JSON.parse(JSON.stringify(a)));
-        const got = fn(...args);
-        let pass;
-        if (tc.isGroupAnagram) {
-          pass = groupAnagramEqual(got, tc.expected);
-        } else {
-          pass = deepEqual(got, tc.expected);
-        }
-        return { pass, input: JSON.stringify(tc.input), got: JSON.stringify(got), expected: JSON.stringify(tc.expected), idx: i+1 };
-      } catch(e) {
-        return { pass: false, input: JSON.stringify(tc.input), got: 'Error: '+e.message, expected: JSON.stringify(tc.expected), idx: i+1 };
-      }
-    });
-  } catch(e) {
-    results = [{ pass: false, input:'—', got:'Compile Error: '+e.message, expected:'—', idx:1 }];
-  }
-
-  console.log = origLog;
-  STATE.consoleLog = logs;
-  return results;
-}
-
-function displayResults(results, isSubmit) {
-  const area = document.getElementById('output-area');
-  area.innerHTML = results.map(r => `
-    <div class="result-item ${r.pass?'pass':'fail'}">
-      <span class="result-icon"><i class="fas fa-${r.pass?'check':'times'}-circle"></i></span>
-      <div class="result-text">
-        <strong>Test ${r.idx}:</strong> ${r.pass?'Passed':'Failed'}<br>
-        <span style="color:var(--text3);font-size:0.7rem;">
-          Input: ${r.input.length>60?r.input.slice(0,60)+'…':r.input} |
-          Got: <span style="color:${r.pass?'var(--green-bright)':'var(--red-bright)'}">${String(r.got).slice(0,80)}</span>
-          ${!r.pass?`| Expected: <span style="color:var(--yellow)">${String(r.expected).slice(0,80)}</span>`:''}
-        </span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function runCode() {
-  if (!STATE.currentQ) return;
-  const results = runTests(editor.getValue(), STATE.currentQ, false);
-  displayResults(results, false);
-  const allPass = results.every(r=>r.pass);
-  const verdictEl = document.getElementById('verdict');
-  if (allPass) {
-    verdictEl.textContent = '✓ Sample tests passed — try submitting!';
-    verdictEl.className = 'ac';
-  } else {
-    verdictEl.textContent = `✗ ${results.filter(r=>!r.pass).length} test(s) failed`;
-    verdictEl.className = 'wa';
-  }
-}
-
-function submitCode() {
-  if (!STATE.currentQ || STATE.contestEnded) return;
-  const btn = document.getElementById('btn-submit');
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span> Judging…`;
-
-  setTimeout(() => {
-    const results = runTests(editor.getValue(), STATE.currentQ, true);
-    displayResults(results, true);
-    const allPass = results.every(r=>r.pass);
-    const verdictEl = document.getElementById('verdict');
-    const elapsed = STATE.totalSeconds - STATE.secondsLeft;
-    const qId = STATE.currentQ.id;
-    const prev = STATE.results[qId];
-
-    if (allPass) {
-      if (!prev || prev.status !== 'ac') {
-        STATE.results[qId] = { status: 'ac', time: elapsed, attempts: (prev?.attempts||0)+1 };
-        updateLeaderboard();
-        toast('✓ Accepted! Great job!', 'success');
-      } else {
-        toast('Already accepted!', 'info');
-      }
-      verdictEl.textContent = '✓ Accepted';
-      verdictEl.className = 'ac';
-    } else {
-      const att = (prev?.attempts||0)+1;
-      STATE.results[qId] = { status: 'wa', time: elapsed, attempts: att };
-      updateLeaderboard();
-      verdictEl.textContent = `✗ Wrong Answer (attempt ${att})`;
-      verdictEl.className = 'wa';
-      toast(`✗ Wrong Answer — keep trying!`, 'error');
-    }
-
-    btn.disabled = false;
-    btn.innerHTML = `<i class="fas fa-paper-plane"></i> Submit`;
-    renderQuestionList();
-    renderLeaderboard();
-  }, 400);
-}
-
-document.getElementById('btn-run').onclick = runCode;
-document.getElementById('btn-submit').onclick = submitCode;
-document.getElementById('btn-reset').onclick = () => {
-  if (!STATE.currentQ) return;
-  if (confirm('Reset to starter code?')) {
-    editor.setValue(DEFAULT_STARTERS[STATE.currentQ.functionName] || '');
-    localStorage.removeItem(`anisoj-code-${STATE.currentQ.id}`);
-  }
-};
-
-/* output tabs */
-document.querySelectorAll('.tab-btn').forEach(btn => {
+/* ════════════════════════════════════════
+   TAB NAVIGATION
+════════════════════════════════════════ */
+document.querySelectorAll('.tab-nav-btn').forEach(btn => {
   btn.onclick = () => {
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
     btn.classList.add('active');
-    if (btn.dataset.tab === 'console') {
-      const area = document.getElementById('output-area');
-      area.innerHTML = STATE.consoleLog.length
-        ? STATE.consoleLog.map(l=>`<div style="color:var(--text2);padding:2px 0;font-size:0.77rem;">> ${l}</div>`).join('')
-        : `<div class="empty-state" style="height:80px;"><p>No console output</p></div>`;
-    }
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
   };
 });
 
-/* ══════════════════════════════════════════════════
-   LEADERBOARD
-══════════════════════════════════════════════════ */
-function getTimeClass(seconds) {
-  if (seconds < 1800) return 't4'; // < 30min → brightest
-  if (seconds < 3600) return 't3'; // < 1h
-  if (seconds < 5400) return 't2'; // < 1.5h
-  return 't1';
-}
-
-function renderLeaderboard() {
-  const wrap = document.getElementById('lb-table-wrap');
-  const users = STATE.leaderboard;
-
-  // sort by score desc, then by total time asc
-  users.sort((a,b) => {
-    const sa = Object.values(a.results).filter(r=>r.status==='ac').length;
-    const sb = Object.values(b.results).filter(r=>r.status==='ac').length;
-    if (sb !== sa) return sb - sa;
-    const ta = Object.values(a.results).filter(r=>r.status==='ac').reduce((s,r)=>s+r.time,0);
-    const tb = Object.values(b.results).filter(r=>r.status==='ac').reduce((s,r)=>s+r.time,0);
-    return ta - tb;
-  });
-
-  document.getElementById('lb-participants').textContent = `${users.length} user${users.length!==1?'s':''}`;
-
-  let hdr = `<tr><th>User</th>`;
-  for(let i=1;i<=10;i++) hdr += `<th>Q${i}</th>`;
-  hdr += `<th>Score</th></tr>`;
-
-  const rows = users.map((u,idx) => {
-    const rank = idx+1;
-    let rankBadge = `<span class="rank-badge${rank<=3?' rank-'+rank:''}">${rank}</span>`;
-    let cells = '';
-    for(let i=1;i<=10;i++) {
-      const r = u.results[i] ?? u.results[String(i)];
-      if (!r) {
-        cells += `<td><span class="lb-cell">—</span></td>`;
-      } else if (r.status==='ac') {
-        const tc = getTimeClass(r.time);
-        const mins = Math.floor(r.time/60);
-        cells += `<td title="${mins}m"><span class="lb-cell correct ${tc}">✓</span></td>`;
-      } else {
-        cells += `<td title="${r.attempts} attempts"><span class="lb-cell wrong">✗</span></td>`;
-      }
-    }
-    const score = Object.values(u.results).filter(r=>r?.status==='ac').length;
-    return `<tr><td>${rankBadge}${u.name}</td>${cells}<td class="lb-score-col">${score}</td></tr>`;
-  });
-
-  wrap.innerHTML = `<table class="lb-table"><thead>${hdr}</thead><tbody>${rows.join('')}</tbody></table>`;
-}
-
-/* ══════════════════════════════════════════════════
-   LEADERBOARD STORAGE (localStorage + BroadcastChannel)
-   — works across tabs instantly
-   — works across devices if Firebase config is set
-   — no backend needed
-══════════════════════════════════════════════════ */
-const LS_KEY = 'anisoj_leaderboard_v1';
-
-/* BroadcastChannel: instant sync across tabs on same browser */
-const bc = (typeof BroadcastChannel !== 'undefined')
-  ? new BroadcastChannel('anisoj_lb')
-  : null;
-
-function lbSave(data) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e){}
-  if (bc) bc.postMessage({ type: 'lb_update', data });
-}
-
-function lbLoad() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch(e) { return {}; }
-}
-
-/* Listen for updates from other tabs */
-if (bc) {
-  bc.onmessage = (e) => {
-    if (e.data?.type === 'lb_update') {
-      applyLbData(e.data.data);
-    }
-  };
-}
-
-/* Also poll localStorage every 3s (cross-browser fallback) */
-setInterval(() => {
-  const data = lbLoad();
-  applyLbData(data);
-}, 3000);
-
-function normalizeResults(raw) {
-  /* JSON parse করলে keys string হয় — সব numeric করে নাও */
-  const out = {};
-  Object.entries(raw || {}).forEach(([k, v]) => { out[Number(k)] = v; });
-  return out;
-}
-
-function applyLbData(data) {
-  STATE.leaderboard = Object.values(data).map(u => {
-    const normalized = normalizeResults(u.results);
-    /* if this is the current user, use in-memory STATE.results
-       so polling never overwrites what they just submitted */
-    if (STATE.username && u.name === STATE.username) {
-      return { name: u.name, results: normalizeResults(STATE.results) };
-    }
-    return { name: u.name, results: normalized };
-  });
-  renderLeaderboard();
-}
-
-function updateLeaderboard() {
-  if (!STATE.username) return;
-
-  const normalizedResults = normalizeResults(STATE.results);
-
-  /* 1. STATE.leaderboard immediately update */
-  let entry = STATE.leaderboard.find(u => u.name === STATE.username);
-  if (entry) {
-    entry.results = normalizedResults;
-  } else {
-    STATE.leaderboard.push({ name: STATE.username, results: normalizedResults });
-  }
-
-  /* 2. localStorage save */
-  const data = lbLoad();
-  data[STATE.username] = { name: STATE.username, results: normalizedResults, updatedAt: Date.now() };
-  lbSave(data);
-}
-
-/* ── contest password helpers ── */
-const LS_PW_KEY = 'anisoj_contest_pw_v1';
-function getContestPw() {
-  try { return localStorage.getItem(LS_PW_KEY) || ''; } catch(e) { return ''; }
-}
-
-function initPwGate() {
-  const pw = getContestPw();
-  const pwRow   = document.getElementById('pw-gate-row');
-  const noPwRow = document.getElementById('no-pw-row');
-  if (pw) {
-    pwRow.style.display   = 'flex';
-    noPwRow.style.display = 'none';
-  } else {
-    pwRow.style.display   = 'none';
-    noPwRow.style.display = 'flex';
-  }
-}
-
-/* toggle show/hide contest pw in index.html */
-document.getElementById('btn-pw-eye').onclick = () => {
-  const inp  = document.getElementById('contest-pw-input');
-  const icon = document.getElementById('pw-eye-idx');
-  if (inp.type === 'password') { inp.type = 'text';     icon.className = 'fas fa-eye-slash'; }
-  else                         { inp.type = 'password'; icon.className = 'fas fa-eye'; }
-};
-
-function doRegister() {
-  const name = document.getElementById('username-input').value.trim();
-  if (!name) return toast('Enter a username first', 'info');
-  if (name.length < 2) return toast('Username too short', 'error');
-
-  /* password check */
-  const requiredPw = getContestPw();
-  if (requiredPw) {
-    const entered = document.getElementById('contest-pw-input').value;
-    if (!entered) return toast('Enter the contest password to join', 'error');
-    if (entered !== requiredPw) {
-      document.getElementById('contest-pw-input').style.borderColor = 'var(--red-bright)';
-      setTimeout(() => document.getElementById('contest-pw-input').style.borderColor = '', 1500);
-      return toast('Incorrect contest password ✗', 'error');
-    }
-  }
-
-  STATE.username = name;
-
-  /* add to STATE.leaderboard if not already there */
-  if (!STATE.leaderboard.find(u => u.name === name)) {
-    STATE.leaderboard.push({ name, results: {} });
-  }
-
-  /* persist to localStorage */
-  const data = lbLoad();
-  if (!data[name]) {
-    data[name] = { name, results: {}, updatedAt: Date.now() };
-    lbSave(data);
-  }
-
-  renderLeaderboard();
-  toast(`Welcome, ${name}! 🎉`, 'success');
-
-  /* disable all join controls */
-  document.getElementById('username-input').disabled = true;
-  const btnPw   = document.getElementById('btn-register');
-  const btnNoPw = document.getElementById('btn-register-nopw');
-  if (btnPw)   { btnPw.textContent   = '✓ Joined'; btnPw.disabled   = true; }
-  if (btnNoPw) { btnNoPw.textContent = '✓ Joined'; btnNoPw.disabled = true; }
-  const pwInp = document.getElementById('contest-pw-input');
-  if (pwInp) pwInp.disabled = true;
-}
-
-/* ── username registration ── */
-document.getElementById('btn-register').onclick = doRegister;
-document.getElementById('btn-register-nopw').onclick = doRegister;
-document.getElementById('username-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRegister();
-});
-document.getElementById('contest-pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRegister();
-});
-
-/* re-check pw gate whenever localStorage changes (admin updates pw) */
-window.addEventListener('storage', (e) => {
-  if (e.key === LS_PW_KEY) initPwGate();
-});
-if (typeof BroadcastChannel !== 'undefined') {
-  const bcIdx = new BroadcastChannel('anisoj_lb');
-  bcIdx.onmessage = (ev) => {
-    if (ev.data?.type === 'pw_update') initPwGate();
-  };
-}
-
-/* ══════════════════════════════════════════════════
+/* ════════════════════════════════════════
    TOAST
-══════════════════════════════════════════════════ */
-function toast(msg, type='info') {
+════════════════════════════════════════ */
+function toast(msg, type = 'info') {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
-  t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'times-circle':'info-circle'}"></i>${msg}`;
+  const icons = { success: 'check-circle', error: 'times-circle', info: 'info-circle' };
+  t.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'}"></i>${msg}`;
   document.getElementById('toast-container').appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
 
-/* ══════════════════════════════════════════════════
-   SEED DEMO PLAYERS (only if storage is empty)
-══════════════════════════════════════════════════ */
-function seedDemoPlayers() {
-  const existing = lbLoad();
-  if (Object.keys(existing).length > 0) return; /* already seeded */
+/* ════════════════════════════════════════
+   CONFIRM DIALOG
+════════════════════════════════════════ */
+function confirm(title, msg, okLabel, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok').textContent = okLabel || 'Confirm';
+  confirmCallback = cb;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+document.getElementById('confirm-cancel').onclick = () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmCallback = null;
+};
+document.getElementById('confirm-ok').onclick = () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+};
 
-  const demos = [
-    { name: 'Alice',  solved: [1,2,3,4,5,6,7],        times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Bob',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
-    { name: 'Rafi',   solved: [1,2,3,5,6],              times: [400,700,1200,2000,2800]         },
-    { name: 'Sadia',  solved: [1,2,3,4,5,6,7,8],       times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Karim',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
-  ];
-
-  const data = {};
-  demos.forEach(d => {
-    const results = {};
-    d.solved.forEach((qid, i) => {
-      results[qid] = { status: 'ac', time: d.times[i], attempts: 1 };
-    });
-    for (let q = 1; q <= 10; q++) {
-      if (!results[q] && Math.random() > 0.55) {
-        results[q] = { status: 'wa', time: Math.floor(Math.random()*5000), attempts: Math.floor(Math.random()*3)+1 };
-      }
-    }
-    data[d.name] = { name: d.name, results, updatedAt: Date.now() };
-  });
-
-  lbSave(data);
-  applyLbData(data);
+/* ════════════════════════════════════════
+   LEADERBOARD RENDERING
+════════════════════════════════════════ */
+function getTimeClass(seconds) {
+  if (seconds < 1800) return 't4';
+  if (seconds < 3600) return 't3';
+  if (seconds < 5400) return 't2';
+  return 't1';
 }
 
-/* ══════════════════════════════════════════════════
-   INIT
-══════════════════════════════════════════════════ */
-/* update footer & score chip to reflect actual question count */
-(function() {
-  const n = QUESTIONS.length;
-  const fc = document.getElementById('footer-q-count');
-  if (fc) fc.textContent = n;
-  const ts = document.getElementById('total-score');
-  if (ts && ts.textContent === '0/10') ts.textContent = '0/' + n;
-})();
+function renderLeaderboard() {
+  const users = Object.values(leaderboardData);
+  users.sort((a, b) => {
+    const sa = Object.values(a.results || {}).filter(r => r?.status === 'ac').length;
+    const sb = Object.values(b.results || {}).filter(r => r?.status === 'ac').length;
+    if (sb !== sa) return sb - sa;
+    const ta = Object.values(a.results || {}).filter(r => r?.status === 'ac').reduce((s, r) => s + r.time, 0);
+    const tb = Object.values(b.results || {}).filter(r => r?.status === 'ac').reduce((s, r) => s + r.time, 0);
+    return ta - tb;
+  });
 
-renderQuestionList();
-seedDemoPlayers();
-applyLbData(lbLoad());
-initPwGate();
+  const totalQ = questions.length || 10;
 
-/* Load first question after DOM + CodeMirror fully rendered */
-setTimeout(() => loadQuestion(QUESTIONS[0]), 50);
+  /* Stats */
+  const totalSolves = users.reduce((s, u) => s + Object.values(u.results || {}).filter(r => r?.status === 'ac').length, 0);
+  const totalWrong  = users.reduce((s, u) => s + Object.values(u.results || {}).filter(r => r?.status === 'wa').length, 0);
+  document.getElementById('stat-participants').textContent = users.length;
+  document.getElementById('stat-solves').textContent = totalSolves;
+  document.getElementById('stat-wrong').textContent = totalWrong;
+  document.getElementById('stat-top').textContent = users.length ? users[0].name : '—';
+  document.getElementById('lb-count-badge').textContent = users.length;
 
-/* ══════════════════════════════════════════════════
-   MOBILE — refresh CodeMirror on resize
-══════════════════════════════════════════════════ */
-window.addEventListener('resize', () => {
-  editor.refresh();
+  /* Header row */
+  let hdr = `<tr><th>Rank</th><th style="text-align:left">User</th>`;
+  for (let i = 1; i <= totalQ; i++) {
+    const q = questions[i - 1];
+    hdr += `<th title="${q ? q.title : 'Q' + i}">Q${i}</th>`;
+  }
+  hdr += `<th>Score</th><th>Actions</th></tr>`;
+  document.getElementById('lb-thead').innerHTML = hdr;
+
+  /* Rows */
+  const rows = users.map((u, idx) => {
+    const rank = idx + 1;
+    const rankBadge = `<span class="rank-badge${rank <= 3 ? ' rank-' + rank : ''}">${rank}</span>`;
+    let cells = '';
+    for (let i = 1; i <= totalQ; i++) {
+      const r = u.results?.[i] ?? u.results?.[String(i)];
+      if (!r) {
+        cells += `<td><span class="lb-cell">—</span></td>`;
+      } else if (r.status === 'ac') {
+        const tc = getTimeClass(r.time);
+        const mins = Math.floor(r.time / 60);
+        cells += `<td title="${mins}m solved"><span class="lb-cell correct ${tc}">✓</span></td>`;
+      } else {
+        cells += `<td title="${r.attempts} attempt(s)"><span class="lb-cell wrong">✗</span></td>`;
+      }
+    }
+    const score = Object.values(u.results || {}).filter(r => r?.status === 'ac').length;
+    return `<tr>
+      <td><span class="rank-badge${rank<=3?' rank-'+rank:''}">${rank}</span></td>
+      <td><span class="user-name">${escHtml(u.name)}</span></td>
+      ${cells}
+      <td><span class="score-badge">${score}/${totalQ}</span></td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${escHtml(u.name)}')">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('lb-tbody').innerHTML = rows.length
+    ? rows.join('')
+    : `<tr><td colspan="${totalQ + 4}" style="padding:30px;text-align:center;color:var(--text3);">
+        <i class="fas fa-users-slash" style="margin-right:8px;"></i>No participants yet
+      </td></tr>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════
+   DELETE USER
+════════════════════════════════════════ */
+function deleteUser(name) {
+  confirm(
+    'Delete User',
+    `Remove "${name}" from the leaderboard? This cannot be undone. index.html will no longer show this user.`,
+    'Delete User',
+    () => {
+      const data = lbLoad();
+      delete data[name];
+      lbSave(data);
+      leaderboardData = data;
+      renderLeaderboard();
+      toast(`User "${name}" deleted from leaderboard.`, 'success');
+    }
+  );
+}
+
+/* CLEAR ALL */
+document.getElementById('btn-clear-all').onclick = () => {
+  confirm(
+    'Clear All Leaderboard Data',
+    'This will permanently delete ALL user data from the leaderboard. index.html will show an empty board. This cannot be undone.',
+    'Clear Everything',
+    () => {
+      lbSave({});
+      leaderboardData = {};
+      renderLeaderboard();
+      toast('All leaderboard data cleared.', 'success');
+    }
+  );
+};
+
+/* REFRESH */
+document.getElementById('btn-refresh').onclick = () => {
+  leaderboardData = lbLoad();
+  renderLeaderboard();
+  toast('Leaderboard refreshed.', 'info');
+};
+
+/* ════════════════════════════════════════
+   QUESTIONS
+════════════════════════════════════════ */
+function loadQuestions() {
+  const stored = qLoad();
+  questions = stored ? stored : JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+}
+
+function updateQBadge() {
+  document.getElementById('q-count-badge').textContent = questions.length;
+}
+
+function renderQList() {
+  const list = document.getElementById('q-list-admin');
+  list.innerHTML = '';
+  questions.forEach((q, idx) => {
+    const item = document.createElement('div');
+    item.className = 'q-admin-item' + (selectedQIdx === idx ? ' selected' : '');
+    item.innerHTML = `
+      <div class="q-num-badge">${idx + 1}</div>
+      <span class="q-admin-title">${escHtml(q.title)}</span>
+      <span class="diff-badge diff-${q.difficulty}">${q.difficulty}</span>
+    `;
+    item.onclick = () => selectQuestion(idx);
+    list.appendChild(item);
+  });
+}
+
+function selectQuestion(idx) {
+  selectedQIdx = idx;
+  renderQList();
+  renderQEditor(questions[idx]);
+  document.getElementById('q-editor-actions').style.display = 'flex';
+}
+
+function renderQEditor(q) {
+  const wrap = document.getElementById('q-editor-wrap');
+
+  // Build test case HTML
+  let tcHtml = '';
+  (q.testCases || []).forEach((tc, i) => {
+    tcHtml += `
+    <div class="tc-item" id="tc-item-${i}">
+      <div class="tc-num">${i+1}</div>
+      <div class="tc-fields">
+        <div class="tc-label">Input (JSON array of args)</div>
+        <input class="tc-input" id="tc-input-${i}" value="${escAttr(JSON.stringify(tc.input))}" placeholder='e.g. [[1,2,3]]'/>
+        <div class="tc-label" style="margin-top:4px;">Expected Output (JSON)</div>
+        <input class="tc-input" id="tc-expected-${i}" value="${escAttr(JSON.stringify(tc.expected))}" placeholder='e.g. 6'/>
+        ${tc.isGroupAnagram ? `<div class="tc-label" style="color:var(--yellow);margin-top:4px;"><i class="fas fa-triangle-exclamation"></i> Group Anagram Mode</div>` : ''}
+      </div>
+      <button class="tc-remove" onclick="removeTc(${i})" title="Remove test case"><i class="fas fa-xmark"></i></button>
+    </div>`;
+  });
+
+  let exHtml = '';
+  (q.examples || []).forEach((ex, i) => {
+    exHtml += `
+    <div class="tc-item" id="ex-item-${i}">
+      <div class="tc-num">${i+1}</div>
+      <div class="tc-fields">
+        <div class="tc-label">Input</div>
+        <input class="tc-input" id="ex-input-${i}" value="${escAttr(ex.input)}" placeholder='e.g. arraySum([1,2,3])'/>
+        <div class="tc-label" style="margin-top:4px;">Output</div>
+        <input class="tc-input" id="ex-output-${i}" value="${escAttr(ex.output)}" placeholder='e.g. 6'/>
+      </div>
+      <button class="tc-remove" onclick="removeEx(${i})" title="Remove example"><i class="fas fa-xmark"></i></button>
+    </div>`;
+  });
+
+  wrap.innerHTML = `
+  <div class="form-wrap">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Question Title</label>
+        <input class="form-input" id="qe-title" value="${escAttr(q.title)}" placeholder="e.g. Array Sum"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Difficulty</label>
+        <select class="form-select" id="qe-diff">
+          <option value="Easy" ${q.difficulty==='Easy'?'selected':''}>Easy</option>
+          <option value="Medium" ${q.difficulty==='Medium'?'selected':''}>Medium</option>
+          <option value="Hard" ${q.difficulty==='Hard'?'selected':''}>Hard</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Function Name</label>
+      <input class="form-input" id="qe-fn" value="${escAttr(q.functionName)}" placeholder="e.g. arraySum"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description (HTML allowed)</label>
+      <textarea class="form-textarea" id="qe-desc" style="min-height:100px;">${escHtml(q.description)}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Constraints (one per line)</label>
+      <textarea class="form-textarea" id="qe-constraints" style="min-height:60px;">${(q.constraints||[]).join('\n')}</textarea>
+    </div>
+
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="form-label" style="margin:0;">Examples</label>
+        <button class="btn btn-ghost btn-sm" onclick="addExample()"><i class="fas fa-plus"></i> Add Example</button>
+      </div>
+      <div class="tc-editor" id="ex-editor">${exHtml}</div>
+    </div>
+
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="form-label" style="margin:0;">Test Cases (hidden from users)</label>
+        <button class="btn btn-ghost btn-sm" onclick="addTc()"><i class="fas fa-plus"></i> Add Test Case</button>
+      </div>
+      <div class="tc-editor" id="tc-editor">${tcHtml}</div>
+    </div>
+  </div>`;
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ADD / REMOVE test cases */
+function addTc() {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.testCases = q.testCases || [];
+  q.testCases.push({ input: [], expected: null });
+  renderQEditor(q);
+}
+function removeTc(idx) {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.testCases.splice(idx, 1);
+  // collect current form values first
+  collectFormToQ();
+  renderQEditor(questions[selectedQIdx]);
+}
+function addExample() {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.examples = q.examples || [];
+  q.examples.push({ input: '', output: '' });
+  renderQEditor(q);
+}
+function removeEx(idx) {
+  if (selectedQIdx === null) return;
+  collectFormToQ();
+  questions[selectedQIdx].examples.splice(idx, 1);
+  renderQEditor(questions[selectedQIdx]);
+}
+
+/* Read form back into questions[selectedQIdx] */
+function collectFormToQ() {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.title       = document.getElementById('qe-title')?.value.trim() || q.title;
+  q.difficulty  = document.getElementById('qe-diff')?.value || q.difficulty;
+  q.functionName= document.getElementById('qe-fn')?.value.trim() || q.functionName;
+  q.description = document.getElementById('qe-desc')?.value || q.description;
+  q.constraints = (document.getElementById('qe-constraints')?.value || '').split('\n').filter(s => s.trim());
+
+  // examples
+  const exEditor = document.getElementById('ex-editor');
+  if (exEditor) {
+    const exItems = exEditor.querySelectorAll('.tc-item');
+    q.examples = Array.from(exItems).map((_, i) => ({
+      input:  document.getElementById(`ex-input-${i}`)?.value || '',
+      output: document.getElementById(`ex-output-${i}`)?.value || '',
+    }));
+  }
+
+  // test cases
+  const tcEditor = document.getElementById('tc-editor');
+  if (tcEditor) {
+    const tcItems = tcEditor.querySelectorAll('.tc-item');
+    q.testCases = Array.from(tcItems).map((_, i) => {
+      let inp, exp;
+      try { inp = JSON.parse(document.getElementById(`tc-input-${i}`)?.value || '[]'); } catch(e) { inp = []; }
+      try { exp = JSON.parse(document.getElementById(`tc-expected-${i}`)?.value ?? 'null'); } catch(e) { exp = null; }
+      return { input: inp, expected: exp };
+    });
+  }
+}
+
+/* SAVE question */
+document.getElementById('btn-save-q').onclick = () => {
+  if (selectedQIdx === null) return;
+  collectFormToQ();
+  qSave(questions);
+  renderQList();
+  updateQBadge();
+  toast('Question saved! index.html will pick up changes.', 'success');
+};
+
+/* DELETE question */
+document.getElementById('btn-delete-q').onclick = () => {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  confirm(
+    'Delete Question',
+    `Delete "${q.title}"? This will remove it from the contest in index.html.`,
+    'Delete Question',
+    () => {
+      questions.splice(selectedQIdx, 1);
+      // re-number IDs
+      questions.forEach((q, i) => { q.id = i + 1; });
+      qSave(questions);
+      selectedQIdx = null;
+      renderQList();
+      updateQBadge();
+      document.getElementById('q-editor-wrap').innerHTML = `<div class="empty-state"><i class="fas fa-pen-to-square"></i><p>Question deleted. Select another or add new.</p></div>`;
+      document.getElementById('q-editor-actions').style.display = 'none';
+      toast('Question deleted.', 'success');
+    }
+  );
+};
+
+/* ADD NEW question */
+document.getElementById('btn-add-q').onclick = () => {
+  const newQ = {
+    id: questions.length + 1,
+    title: 'New Question',
+    difficulty: 'Easy',
+    functionName: 'solve',
+    description: 'Write a function <code>solve()</code> that...',
+    examples: [{ input: 'solve()', output: 'result' }],
+    constraints: ['1 ≤ n ≤ 100'],
+    testCases: [{ input: [], expected: null }],
+  };
+  questions.push(newQ);
+  selectedQIdx = questions.length - 1;
+  qSave(questions);
+  renderQList();
+  updateQBadge();
+  renderQEditor(newQ);
+  document.getElementById('q-editor-actions').style.display = 'flex';
+  toast('New question created. Fill in the details and save.', 'info');
+};
+
+/* ════════════════════════════════════════
+   CONTEST PASSWORD
+════════════════════════════════════════ */
+function pwLoad() {
+  try { return localStorage.getItem(LS_PW_KEY) || ''; } catch(e) { return ''; }
+}
+function pwSave(pw) {
+  try {
+    if (pw) localStorage.setItem(LS_PW_KEY, pw);
+    else localStorage.removeItem(LS_PW_KEY);
+  } catch(e) {}
+  if (bc) bc.postMessage({ type: 'pw_update', data: pw });
+}
+
+function renderPwPanel() {
+  const pw = pwLoad();
+  const badge   = document.getElementById('pw-status-badge');
+  const wrap    = document.getElementById('pw-current-wrap');
+  const display = document.getElementById('pw-display');
+  const label   = document.getElementById('pw-set-label');
+
+  if (pw) {
+    badge.innerHTML  = '<i class="fas fa-circle-check"></i> Active';
+    badge.style.background = 'var(--green-cell)';
+    badge.style.color      = 'var(--green-bright)';
+    badge.style.border     = '1px solid var(--green-cell-border)';
+    display.textContent    = pw;
+    wrap.style.display     = 'block';
+    label.textContent      = 'Change Password';
+  } else {
+    badge.innerHTML  = '<i class="fas fa-circle-xmark"></i> Not Set';
+    badge.style.background = 'var(--red-cell)';
+    badge.style.color      = 'var(--red-bright)';
+    badge.style.border     = '1px solid var(--red-cell-border)';
+    wrap.style.display     = 'none';
+    label.textContent      = 'Set Contest Password';
+  }
+}
+
+/* Save password */
+document.getElementById('btn-set-pw').onclick = () => {
+  const val = document.getElementById('pw-input').value.trim();
+  if (!val) return toast('Enter a password first.', 'error');
+  if (val.length < 3) return toast('Password must be at least 3 characters.', 'error');
+  pwSave(val);
+  document.getElementById('pw-input').value = '';
+  renderPwPanel();
+  toast('Contest password saved! Participants can now join with it.', 'success');
+};
+
+/* Enter key on input */
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-set-pw').click();
 });
+
+/* Toggle show/hide */
+document.getElementById('btn-pw-toggle').onclick = () => {
+  const inp  = document.getElementById('pw-input');
+  const icon = document.getElementById('pw-eye-icon');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    inp.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+};
+
+/* Generate random password */
+document.getElementById('btn-gen-pw').onclick = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+  let pw = '';
+  for (let i = 0; i < 8; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  const inp = document.getElementById('pw-input');
+  inp.value = pw;
+  inp.type  = 'text';
+  document.getElementById('pw-eye-icon').className = 'fas fa-eye-slash';
+  toast('Random password generated — click Save to apply.', 'info');
+};
+
+/* Remove password */
+document.getElementById('btn-remove-pw').onclick = () => {
+  const cur = pwLoad();
+  if (!cur) return toast('No password is currently set.', 'info');
+  confirm(
+    'Remove Contest Password',
+    'This will allow anyone to join the contest without a password. Are you sure?',
+    'Remove Password',
+    () => {
+      pwSave('');
+      renderPwPanel();
+      toast('Contest password removed. Contest is now open to all.', 'success');
+    }
+  );
+};
+
+/* Copy password to clipboard */
+document.getElementById('btn-copy-pw').onclick = () => {
+  const pw = pwLoad();
+  if (!pw) return;
+  navigator.clipboard.writeText(pw).then(() => {
+    toast('Password copied to clipboard!', 'success');
+  }).catch(() => {
+    /* fallback */
+    const el = document.createElement('textarea');
+    el.value = pw;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    el.remove();
+    toast('Password copied!', 'success');
+  });
+};
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+loadQuestions();
+leaderboardData = lbLoad();
+renderLeaderboard();
+renderQList();
+updateQBadge();
+renderPwPanel();
+loadCfgToForm();
+updateSyncBar();
+/* Initial cloud pull */
+if (isCloudReady()) cloudSync(false);
