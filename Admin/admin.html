@@ -8,12 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <link rel="stylesheet" href="styles.css">
-<script>
-    // কন্ডিশন: যদি AnisOJ !== "true" হয়, তবে লগইন পেজে পাঠাবে
-    if (localStorage.getItem("AnisOJ") !== "true") {
-        window.location.href = "../index.html";
-    }
-</script>
 </head>
 <body>
 
@@ -262,23 +256,33 @@
     
 <script>
 (function() {
-    // ১. আপনার দেওয়া ইউজার ডাটা
     const USERS = [{ user: "QWRtaW4=", pass: "QW5pc3VyMzU1MjMyMDBAQW5pcw==", role: "admin" }];
-    
     function decrypt(v) { return atob(v); }
 
-    // ২. লগইন ফর্ম তৈরি করা (যদি লগইন না থাকে)
-    function createLoginUI() {
+    // চেক করা হচ্ছে লগইন করা আছে কি না
+    if (localStorage.getItem("AnisOJ") === "true") {
+        // লগইন থাকলে যা দেখাবে
+        document.body.innerHTML = `
+            <div style="padding:20px;">
+                <h1>Admin Panel</h1>
+                <button id="logout-btn" style="position:fixed; top:20px; right:20px; padding:10px 20px; background:red; color:white; border:none; cursor:pointer;">Logout</button>
+            </div>
+        `;
+        document.getElementById('logout-btn').onclick = () => {
+            localStorage.removeItem("AnisOJ");
+            window.location.href = "../index.html";
+        };
+    } else {
+        // লগইন না থাকলে ওভারলে তৈরি করবে
         const overlay = document.createElement('div');
-        overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:#1e1e1e; display:flex; justify-content:center; align-items:center; z-index:99999;";
-        
+        overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:#1e1e1e; display:flex; justify-content:center; align-items:center;";
         overlay.innerHTML = `
             <div style="background:#2d2d2d; padding:30px; border-radius:10px; width:300px; text-align:center; color:white;">
                 <h2>Admin Login</h2>
-                <input type="text" id="u" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-                <input type="password" id="p" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-                <button id="login-btn" style="width:100%; padding:10px; background:#2ed573; border:none; color:white; cursor:pointer;">Login</button>
-                <p id="err" style="color:#ff4757; margin-top:10px;"></p>
+                <input type="text" id="u" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px;"><br>
+                <input type="password" id="p" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px;"><br>
+                <button id="login-btn" style="width:100%; padding:10px; background:green; color:white; border:none;">Login</button>
+                <p id="err" style="color:red;"></p>
             </div>
         `;
         document.body.appendChild(overlay);
@@ -286,35 +290,14 @@
         document.getElementById('login-btn').onclick = () => {
             const u = document.getElementById('u').value;
             const p = document.getElementById('p').value;
-            
             const valid = USERS.find(acc => u === decrypt(acc.user) && p === decrypt(acc.pass));
-            
             if (valid) {
                 localStorage.setItem("AnisOJ", "true");
                 location.reload();
             } else {
-                document.getElementById('err').innerText = "Invalid Credentials!";
+                document.getElementById('err').innerText = "Wrong Details!";
             }
         };
-    }
-
-    // ৩. লগআউট বাটন তৈরি (যদি লগইন থাকে)
-    function createLogoutBtn() {
-        const btn = document.createElement('button');
-        btn.innerText = "Logout";
-        btn.style.cssText = "position:fixed; top:20px; right:20px; padding:10px 20px; background:#ff4757; color:white; border:none; cursor:pointer; border-radius:5px; z-index:99999;";
-        btn.onclick = () => {
-            localStorage.removeItem("AnisOJ");
-            window.location.href = "../index.html"; // লগআউট করে মেইন পেজে পাঠিয়ে দেবে
-        };
-        document.body.appendChild(btn);
-    }
-
-    // ৪. সেশন চেক
-    if (localStorage.getItem("AnisOJ") === "true") {
-        createLogoutBtn();
-    } else {
-        createLoginUI();
     }
 })();
 </script>
