@@ -259,30 +259,17 @@
     const USERS = [{ user: "QWRtaW4=", pass: "QW5pc3VyMzU1MjMyMDBAQW5pcw==", role: "admin" }];
     function decrypt(v) { return atob(v); }
 
-    // চেক করা হচ্ছে লগইন করা আছে কি না
-    if (localStorage.getItem("AnisOJ") === "true") {
-        // লগইন থাকলে যা দেখাবে
-        document.body.innerHTML = `
-            <div style="padding:20px;">
-                <h1>Admin Panel</h1>
-                <button id="logout-btn" style="position:fixed; top:20px; right:20px; padding:10px 20px; background:red; color:white; border:none; cursor:pointer;">Logout</button>
-            </div>
-        `;
-        document.getElementById('logout-btn').onclick = () => {
-            localStorage.removeItem("AnisOJ");
-            window.location.href = "../index.html";
-        };
-    } else {
-        // লগইন না থাকলে ওভারলে তৈরি করবে
+    // যদি লগইন না থাকে, তবে ওভারলে দেখাবে
+    if (localStorage.getItem("AnisOJ") !== "true") {
         const overlay = document.createElement('div');
-        overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:#1e1e1e; display:flex; justify-content:center; align-items:center;";
+        overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:#1e1e1e; display:flex; justify-content:center; align-items:center; z-index:99999;";
         overlay.innerHTML = `
             <div style="background:#2d2d2d; padding:30px; border-radius:10px; width:300px; text-align:center; color:white;">
                 <h2>Admin Login</h2>
-                <input type="text" id="u" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px;"><br>
-                <input type="password" id="p" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px;"><br>
-                <button id="login-btn" style="width:100%; padding:10px; background:green; color:white; border:none;">Login</button>
-                <p id="err" style="color:red;"></p>
+                <input type="text" id="u" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+                <input type="password" id="p" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+                <button id="login-btn" style="width:100%; padding:10px; background:green; color:white; border:none; cursor:pointer;">Login</button>
+                <p id="err" style="color:red; margin-top:10px;"></p>
             </div>
         `;
         document.body.appendChild(overlay);
@@ -298,6 +285,19 @@
                 document.getElementById('err').innerText = "Wrong Details!";
             }
         };
+    } else {
+        // লগইন থাকলে হেডার-এর ডানদিকে লগআউট বাটন যোগ করবে
+        const headerRight = document.querySelector('.header-right');
+        if(headerRight) {
+            const logoutBtn = document.createElement('button');
+            logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+            logoutBtn.style.cssText = "margin-left:10px; padding:5px 15px; background:#ff4757; color:white; border:none; cursor:pointer; border-radius:5px;";
+            logoutBtn.onclick = () => {
+                localStorage.removeItem("AnisOJ");
+                window.location.href = "../index.html";
+            };
+            headerRight.appendChild(logoutBtn);
+        }
     }
 })();
 </script>
