@@ -622,7 +622,7 @@ function seedDemoPlayers() {
 
   const demos = [
     { name: 'Anika',  solved: [1,2,3,4,5,6,7],        times: [300,480,720,900,1100,1350,2100] },
-    { name: 'Bob',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
+    { name: 'Anupom',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
     { name: 'Rafi',   solved: [1,2,3,5,6],              times: [400,700,1200,2000,2800]         },
     { name: 'Likhon',  solved: [1,2,3,4,5,6,7,8],       times: [200,350,600,800,1100,1500,2000,2800] },
     { name: 'Abir',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
@@ -630,7 +630,7 @@ function seedDemoPlayers() {
     { name: 'Sumaiya',    solved: [1,2,3,4,5,6],           times: [600,800,1000,1500,1900,2400]    },
     { name: 'Rafi',   solved: [1,2,3,5,6],              times: [400,700,1200,2000,2800]         },
     { name: 'Mohammad',  solved: [1,2,3,4,5,6,7,8],       times: [200,350,600,800,1100,1500,2000,2800] },
-    { name: 'Karim',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
+    { name: 'Sonjoy',  solved: [1,2,3,4],                times: [500,900,1400,2200]              },
   
   ];
 
