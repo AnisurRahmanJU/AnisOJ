@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AnisOJ — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+:root {
+  --font: 'JetBrains Mono', monospace;
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2128;
+  --bg4: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #6e7681;
+  --accent: #58a6ff;
+  --accent2: #1f6feb;
+  --green: #238636;
+  --green-bright: #3fb950;
+  --green-cell: #1a4731;
+  --green-cell-border: #2ea043;
+  --red: #da3633;
+  --red-bright: #f85149;
+  --red-cell: #4a1010;
+  --red-cell-border: #cf2929;
+  --yellow: #e3b341;
+  --purple: #8b5cf6;
+  --orange: #f97316;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+[data-theme="light"] {
+  --bg: #f0f2f5;
+  --bg2: #ffffff;
+  --bg3: #f6f8fa;
+  --bg4: #eaeef2;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text2: #636c76;
+  --text3: #9198a1;
+  --accent: #0969da;
+  --accent2: #0550ae;
+  --green: #1a7f37;
+  --green-bright: #1a7f37;
+  --green-cell: #d1f0d9;
+  --green-cell-border: #2da44e;
+  --red: #cf222e;
+  --red-bright: #cf222e;
+  --red-cell: #ffd7d5;
+  --red-cell-border: #cf222e;
+  --yellow: #9a6700;
+  --purple: #7c3aed;
+  --orange: #e05d20;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;scroll-behavior:smooth;}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  transition:background .25s,color .25s;
+}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
+
+/* HEADER */
+#header{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:52px;
+  backdrop-filter:blur(8px);
+  box-shadow:var(--shadow-sm);
+}
+.logo{display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:700;color:var(--text);text-decoration:none;}
+.logo-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--orange),var(--red));
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;color:#fff;font-weight:700;
+}
+.logo span{color:var(--orange);}
+.admin-badge{
+  background:linear-gradient(135deg,var(--orange),var(--red));
+  color:#fff;border-radius:var(--radius-sm);
+  padding:4px 12px;font-size:0.72rem;font-weight:700;
+  letter-spacing:0.8px;text-transform:uppercase;
+}
+.header-right{display:flex;align-items:center;gap:10px;}
+#theme-btn{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.95rem;transition:all .2s;
+}
+#theme-btn:hover{background:var(--bg4);color:var(--accent);border-color:var(--accent);}
+
+/* TABS */
+.tab-nav{
+  display:flex;
+  border-bottom:1px solid var(--border);
+  background:var(--bg2);
+  padding:0 24px;
+  gap:0;
+}
+.tab-nav-btn{
+  font-family:var(--font);
+  font-size:0.8rem;font-weight:600;
+  padding:14px 20px;
+  background:transparent;
+  border:none;border-bottom:2px solid transparent;
+  color:var(--text2);
+  cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+  transition:.18s;
+  letter-spacing:.3px;
+  margin-bottom:-1px;
+}
+.tab-nav-btn:hover{color:var(--text);}
+.tab-nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-nav-btn .badge{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:1px 7px;
+  font-size:0.65rem;
+  color:var(--text3);
+}
+
+/* MAIN CONTENT */
+#content{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%;}
+
+.panel{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  margin-bottom:24px;
+}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+}
+.panel-title{
+  font-size:0.82rem;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--text2);
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title i{color:var(--accent);}
+.panel-actions{display:flex;align-items:center;gap:8px;}
+
+/* BUTTONS */
+.btn{
+  font-family:var(--font);font-size:0.75rem;font-weight:600;
+  border:none;cursor:pointer;border-radius:var(--radius-sm);
+  display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+  transition:all .18s;letter-spacing:.3px;
+}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-accent{background:var(--accent2);color:#fff;}
+.btn-accent:hover{background:var(--accent);filter:brightness(1.1);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:var(--green-bright);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{background:var(--red-bright);}
+.btn-orange{background:var(--orange);color:#fff;}
+.btn-orange:hover{filter:brightness(1.15);}
+.btn-sm{padding:4px 10px;font-size:0.7rem;}
+
+/* LEADERBOARD TABLE */
+.lb-wrap{overflow-x:auto;padding:0;}
+.lb-table{
+  border-collapse:collapse;
+  width:100%;
+  font-size:0.73rem;
+}
+.lb-table th{
+  background:var(--bg3);
+  padding:9px 10px;
+  text-align:center;
+  border-bottom:2px solid var(--border);
+  color:var(--text3);
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  font-size:0.65rem;
+  white-space:nowrap;
+}
+.lb-table th:first-child{text-align:left;padding-left:16px;}
+.lb-table td{
+  padding:8px 10px;
+  text-align:center;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+.lb-table td:first-child{text-align:left;padding-left:16px;}
+.lb-table tbody tr:hover{background:var(--bg3);}
+.lb-table tbody tr:last-child td{border-bottom:none;}
+
+.rank-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--bg4);color:var(--text3);
+  font-size:0.7rem;font-weight:700;
+  margin-right:8px;flex-shrink:0;
+}
+.rank-badge.rank-1{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;}
+.rank-badge.rank-2{background:linear-gradient(135deg,#C0C0C0,#A8A8A8);color:#000;}
+.rank-badge.rank-3{background:linear-gradient(135deg,#CD7F32,#A0522D);color:#fff;}
+
+.user-name{font-weight:600;color:var(--text);}
+.user-cell{display:flex;align-items:center;}
+
+.lb-cell{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:4px;
+  font-size:0.68rem;font-weight:700;
+  background:var(--bg4);color:var(--text3);
+}
+.lb-cell.correct{background:var(--green-cell);color:var(--green-bright);border:1px solid var(--green-cell-border);}
+.lb-cell.wrong{background:var(--red-cell);color:var(--red-bright);border:1px solid var(--red-cell-border);}
+.lb-cell.correct.t4{background:#0f3d24;color:#56d364;}
+.lb-cell.correct.t3{background:#163320;color:#3fb950;}
+.lb-cell.correct.t2{background:#1a3a1a;color:#2ea043;}
+.lb-cell.correct.t1{background:#1c2b1c;color:#238636;}
+
+.score-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:3px 10px;border-radius:10px;
+  font-size:0.75rem;font-weight:700;
+  background:var(--green-cell);color:var(--green-bright);
+  border:1px solid var(--green-cell-border);
+}
+
+/* STATS ROW */
+.stats-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:14px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.stat-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);}
+.stat-value{font-size:1.6rem;font-weight:700;color:var(--text);}
+.stat-value.green{color:var(--green-bright);}
+.stat-value.blue{color:var(--accent);}
+.stat-value.orange{color:var(--orange);}
+.stat-value.purple{color:var(--purple);}
+.stat-sub{font-size:0.68rem;color:var(--text3);}
+
+/* CONFIRM DIALOG */
+.confirm-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:999;
+  opacity:0;pointer-events:none;
+  transition:.2s;
+}
+.confirm-overlay.open{opacity:1;pointer-events:all;}
+.confirm-box{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:28px 32px;
+  max-width:380px;width:90%;
+  box-shadow:var(--shadow);
+  text-align:center;
+}
+.confirm-box h3{font-size:1rem;color:var(--text);margin-bottom:10px;}
+.confirm-box p{font-size:0.8rem;color:var(--text2);margin-bottom:22px;line-height:1.6;}
+.confirm-btn-row{display:flex;gap:10px;justify-content:center;}
+
+/* QUESTION MANAGER */
+.q-manager-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+}
+@media(max-width:900px){.q-manager-grid{grid-template-columns:1fr;}}
+
+.q-list-admin{
+  display:flex;flex-direction:column;gap:4px;
+  padding:12px;
+  max-height:600px;
+  overflow-y:auto;
+}
+.q-admin-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg3);
+  cursor:pointer;
+  transition:.18s;
+  position:relative;
+}
+.q-admin-item:hover{border-color:var(--accent);background:var(--bg4);}
+.q-admin-item.selected{border-color:var(--accent);background:var(--bg4);}
+.q-admin-item.selected::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:var(--accent);border-radius:3px 0 0 3px;
+}
+.q-num-badge{
+  width:24px;height:24px;border-radius:4px;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.7rem;font-weight:700;color:var(--text2);
+  flex-shrink:0;
+}
+.q-admin-title{flex:1;font-size:0.82rem;font-weight:600;color:var(--text);}
+.diff-badge{
+  font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:10px;
+  flex-shrink:0;
+}
+.diff-Easy{background:#1a4731;color:#3fb950;}
+.diff-Medium{background:#3d2b00;color:#e3b341;}
+.diff-Hard{background:#4a0f0f;color:#f85149;}
+[data-theme="light"] .diff-Easy{background:#dafbe1;color:#1a7f37;}
+[data-theme="light"] .diff-Medium{background:#fff8c5;color:#9a6700;}
+[data-theme="light"] .diff-Hard{background:#ffd7d5;color:#cf222e;}
+
+/* FORM */
+.form-wrap{padding:16px;}
+.form-group{margin-bottom:14px;}
+.form-label{
+  display:block;
+  font-size:0.72rem;font-weight:700;
+  color:var(--text2);text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:6px;
+}
+.form-input, .form-textarea, .form-select{
+  font-family:var(--font);
+  font-size:0.8rem;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:var(--radius-sm);
+  padding:8px 10px;
+  width:100%;
+  outline:none;
+  transition:.15s;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus{border-color:var(--accent);}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.5;}
+.form-select option{background:var(--bg2);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.tc-editor{
+  display:flex;flex-direction:column;gap:6px;
+}
+.tc-item{
+  display:flex;gap:8px;align-items:flex-start;
+  padding:8px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+}
+.tc-num{
+  width:20px;height:20px;flex-shrink:0;
+  border-radius:3px;background:var(--bg4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.65rem;color:var(--text3);font-weight:700;
+  margin-top:2px;
+}
+.tc-fields{flex:1;display:flex;flex-direction:column;gap:5px;}
+.tc-input{
+  font-family:var(--font);font-size:0.73rem;
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--text);border-radius:3px;padding:4px 7px;
+  width:100%;outline:none;
+}
+.tc-input:focus{border-color:var(--accent);}
+.tc-label{font-size:0.65rem;color:var(--text3);margin-bottom:2px;}
+.tc-remove{
+  width:22px;height:22px;flex-shrink:0;
+  background:var(--red-cell);border:1px solid var(--red-cell-border);
+  color:var(--red-bright);border-radius:3px;
+  cursor:pointer;font-size:0.65rem;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:2px;transition:.15s;
+}
+.tc-remove:hover{background:var(--red);color:#fff;}
+
+/* TOAST */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 16px;
+  font-size:0.78rem;display:flex;align-items:center;gap:8px;
+  box-shadow:var(--shadow);animation:slideIn .25s ease;min-width:220px;
+}
+.toast.success{border-left:3px solid var(--green-bright);color:var(--green-bright);}
+.toast.error{border-left:3px solid var(--red-bright);color:var(--red-bright);}
+.toast.info{border-left:3px solid var(--accent);color:var(--accent);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* TAB SECTIONS */
+.tab-section{display:none;}
+.tab-section.active{display:block;}
+
+/* EMPTY STATE */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px;text-align:center;color:var(--text3);gap:10px;
+}
+.empty-state i{font-size:2rem;color:var(--border);}
+.empty-state p{font-size:0.8rem;}
+
+/* Q EDITOR FORM SCROLL */
+.q-editor-scroll{overflow-y:auto;max-height:620px;}
+
+/* SYNC STATUS */
+.sync-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  font-size:0.72rem;color:var(--text3);
+}
+.sync-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green-bright);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="logo">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    JS <span>AnisOJ</span> &nbsp;Admin
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="admin-badge"><i class="fas fa-user-gear" style="margin-right:5px;"></i>Admin Panel</span>
+    <div class="header-right">
+      <button id="theme-btn" title="Toggle theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- TAB NAV -->
+<nav class="tab-nav">
+  <button class="tab-nav-btn active" data-tab="leaderboard">
+    <i class="fas fa-ranking-star"></i> Leaderboard
+    <span class="badge" id="lb-count-badge">0</span>
+  </button>
+  <button class="tab-nav-btn" data-tab="questions">
+    <i class="fas fa-list-check"></i> Questions
+    <span class="badge" id="q-count-badge">10</span>
+  </button>
+  <button class="tab-nav-btn" data-tab="contest">
+    <i class="fas fa-key"></i> Contest Password
+  </button>
+  <button class="tab-nav-btn" data-tab="setup">
+    <i class="fas fa-cloud"></i> Cloud Setup
+  </button>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="content">
+
+  <!-- ════════════════════════════════════
+       LEADERBOARD TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section active" id="tab-leaderboard">
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-users" style="margin-right:4px;"></i>Participants</div>
+        <div class="stat-value blue" id="stat-participants">0</div>
+        <div class="stat-sub">registered users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-circle-check" style="margin-right:4px;"></i>Total Solves</div>
+        <div class="stat-value green" id="stat-solves">0</div>
+        <div class="stat-sub">accepted submissions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-trophy" style="margin-right:4px;"></i>Top Scorer</div>
+        <div class="stat-value orange" id="stat-top" style="font-size:1rem;padding-top:4px;">—</div>
+        <div class="stat-sub">leading the board</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-xmark" style="margin-right:4px;"></i>Wrong Attempts</div>
+        <div class="stat-value purple" id="stat-wrong">0</div>
+        <div class="stat-sub">total WA across board</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="fas fa-table-list"></i> Full Leaderboard</span>
+        <div class="panel-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-refresh">
+            <i class="fas fa-rotate-right"></i> Refresh
+          </button>
+          <button class="btn btn-danger btn-sm" id="btn-clear-all">
+            <i class="fas fa-trash-can"></i> Clear All Data
+          </button>
+        </div>
+      </div>
+      <div class="sync-bar">
+        <div class="sync-dot"></div>
+        Auto-syncing with index.html via localStorage &mdash; updates every 2s
+      </div>
+      <div class="lb-wrap">
+        <table class="lb-table" id="admin-lb-table">
+          <thead id="lb-thead"></thead>
+          <tbody id="lb-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       QUESTIONS TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section" id="tab-questions">
+    <div class="q-manager-grid">
+
+      <!-- LEFT: Question List -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-list-ol"></i> Question List</span>
+          <button class="btn btn-green btn-sm" id="btn-add-q">
+            <i class="fas fa-plus"></i> Add New
+          </button>
+        </div>
+        <div class="q-list-admin" id="q-list-admin"></div>
+      </div>
+
+      <!-- RIGHT: Question Editor -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-pen-to-square"></i> Question Editor</span>
+          <div class="panel-actions" id="q-editor-actions" style="display:none;">
+            <button class="btn btn-danger btn-sm" id="btn-delete-q">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+            <button class="btn btn-green btn-sm" id="btn-save-q">
+              <i class="fas fa-floppy-disk"></i> Save
+            </button>
+          </div>
+        </div>
+        <div class="q-editor-scroll" id="q-editor-wrap">
+          <div class="empty-state">
+            <i class="fas fa-pen-to-square"></i>
+            <p>Select a question to edit, or click "Add New" to create one.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       CONTEST PASSWORD TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section" id="tab-contest">
+    <div style="max-width:560px;margin:40px auto;">
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-key"></i> Contest Password</span>
+          <span id="pw-status-badge"></span>
+        </div>
+
+        <div style="padding:28px 28px 24px;">
+
+          <!-- ── ACTIVE PASSWORD DISPLAY ── -->
+          <div id="pw-active-block" style="display:none;margin-bottom:28px;">
+            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px;">
+              <i class="fas fa-circle-check" style="color:var(--green-bright);margin-right:5px;"></i>Active Password
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div id="pw-display"
+                style="flex:1;background:var(--bg3);border:2px solid var(--green-cell-border);
+                       border-radius:var(--radius-sm);padding:12px 16px;
+                       font-size:1.15rem;font-weight:700;color:var(--green-bright);
+                       letter-spacing:3px;font-family:var(--font);">
+              </div>
+              <button class="btn btn-ghost" id="btn-copy-pw" title="Copy password">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+            <div style="margin-top:10px;font-size:0.73rem;color:var(--text3);display:flex;align-items:center;gap:6px;">
+              <i class="fas fa-share-nodes" style="color:var(--accent);"></i>
+              Share this password with your participants.
+            </div>
+          </div>
+
+          <!-- ── CREATE / CHANGE PASSWORD ── -->
+          <div>
+            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px;" id="pw-form-label">
+              Create Contest Password
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="position:relative;flex:1;">
+                <input type="text" id="pw-input" class="form-input"
+                  placeholder="Type a password..."
+                  autocomplete="off"
+                  style="letter-spacing:1px;"/>
+              </div>
+              <button class="btn btn-green" id="btn-set-pw">
+                <i class="fas fa-floppy-disk"></i> Save
+              </button>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" id="btn-gen-pw">
+                <i class="fas fa-shuffle"></i> Random
+              </button>
+            </div>
+          </div>
+
+          <!-- ── DELETE PASSWORD ── -->
+          <div id="pw-delete-block" style="display:none;margin-top:24px;padding-top:24px;border-top:1px solid var(--border);">
+            <div style="font-size:0.73rem;color:var(--text2);margin-bottom:12px;line-height:1.6;">
+              Deleting the password will open the contest to everyone — no password required to join.
+            </div>
+            <button class="btn btn-danger" id="btn-delete-pw">
+              <i class="fas fa-trash"></i> Delete Password
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       CLOUD SETUP TAB
+  ════════════════════════════════════ -->
+  <div class="tab-section" id="tab-setup">
+    <div style="max-width:620px;margin:32px auto;display:flex;flex-direction:column;gap:20px;">
+
+      <!-- STATUS -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-cloud"></i> Cloud Sync Status</span>
+          <span id="cloud-status-badge" style="font-size:0.72rem;padding:3px 12px;border-radius:10px;
+            background:var(--red-cell);color:var(--red-bright);border:1px solid var(--red-cell-border);">
+            <i class="fas fa-circle-xmark"></i> Not Connected
+          </span>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:0.8rem;color:var(--text2);line-height:1.7;">
+            ইন্টারনেট-based storage চালু করতে নিচে <strong style="color:var(--accent);">JSONBin.io</strong> API Key ও Bin ID দিন।
+            একবার সেট করলে যেকোনো ডিভাইস থেকে লিডারবোর্ড দেখা যাবে।
+          </div>
+          <div id="cloud-last-sync" style="font-size:0.72rem;color:var(--text3);margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <!-- HOW TO GET API KEY -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-circle-info"></i> কিভাবে API Key পাবেন</span>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">1</div>
+            <div style="font-size:0.78rem;color:var(--text2);line-height:1.6;">
+              <a href="https://jsonbin.io" target="_blank" style="color:var(--accent);">jsonbin.io</a> তে যান → <strong style="color:var(--text);">Sign Up</strong> করুন (বিনামূল্যে)
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">2</div>
+            <div style="font-size:0.78rem;color:var(--text2);line-height:1.6;">
+              Dashboard → <strong style="color:var(--text);">API Keys</strong> → <strong style="color:var(--text);">Create Access Key</strong> → Key কপি করুন
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">3</div>
+            <div style="font-size:0.78rem;color:var(--text2);line-height:1.6;">
+              নিচে API Key বসিয়ে <strong style="color:var(--green-bright);">Create Bin</strong> চাপুন — Bin ID স্বয়ংক্রিয়ভাবে তৈরি হবে
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">4</div>
+            <div style="font-size:0.78rem;color:var(--text2);line-height:1.6;">
+              <strong style="color:var(--text);">index.html</strong> খুলুন — Cloud Sync icon দেখাবে, সব ডিভাইসে কাজ করবে
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API CONFIG FORM -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="fas fa-plug"></i> API Configuration</span>
+        </div>
+        <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
+
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">JSONBin.io API Key (X-Master-Key)</label>
+            <div style="position:relative;">
+              <input type="password" id="cfg-apikey" class="form-input"
+                placeholder="$2a$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                autocomplete="off" style="padding-right:40px;font-size:0.72rem;"/>
+              <button onclick="toggleCfgEye('cfg-apikey','cfg-eye-key')"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.82rem;">
+                <i class="fas fa-eye" id="cfg-eye-key"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Bin ID <span style="color:var(--text3);font-weight:400;">(API Key দিয়ে Create Bin করলে স্বয়ংক্রিয় হবে)</span></label>
+            <input type="text" id="cfg-binid" class="form-input"
+              placeholder="64xxxxxxxxxxxxxxxxxxxxxxxx"
+              autocomplete="off" style="font-size:0.78rem;"/>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-green" id="btn-create-bin">
+              <i class="fas fa-plus-circle"></i> Create New Bin
+            </button>
+            <button class="btn btn-accent" id="btn-save-cfg">
+              <i class="fas fa-floppy-disk"></i> Save Config
+            </button>
+            <button class="btn btn-ghost" id="btn-test-cfg">
+              <i class="fas fa-wifi"></i> Test Connection
+            </button>
+            <button class="btn btn-danger btn-sm" id="btn-clear-cfg">
+              <i class="fas fa-trash"></i> Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+</div><!-- /content -->
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Confirm Action</h3>
+    <p id="confirm-msg">Are you sure?</p>
+    <div class="confirm-btn-row">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<script>
+/* ════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════ */
+const LS_KEY    = 'anisoj_leaderboard_v1';
+const LS_Q_KEY  = 'anisoj_questions_v1';
+const LS_PW_KEY = 'anisoj_contest_pw_v1';
+
+/* default questions (same as index.html) */
+const DEFAULT_QUESTIONS = [
+  {id:1,title:"Array Sum",difficulty:"Easy",description:`Write a function <code>arraySum(arr)</code> that takes an array of numbers and returns their sum.`,examples:[{input:"arraySum([1, 2, 3, 4, 5])",output:"15"},{input:"arraySum([-1, 0, 1])",output:"0"},{input:"arraySum([10, 20, 30])",output:"60"}],constraints:["Array length: 1 ≤ n ≤ 1000","Elements: -10⁶ ≤ arr[i] ≤ 10⁶"],testCases:[{input:[[1,2,3,4,5]],expected:15},{input:[[-1,0,1]],expected:0},{input:[[10,20,30]],expected:60},{input:[[0]],expected:0},{input:[[-5,-10,15]],expected:0}],functionName:"arraySum"},
+  {id:2,title:"Palindrome Check",difficulty:"Easy",description:`Write a function <code>isPalindrome(str)</code> that returns <code>true</code> if the string is a palindrome (reads the same forwards and backwards), ignoring case. Otherwise return <code>false</code>.`,examples:[{input:'isPalindrome("racecar")',output:"true"},{input:'isPalindrome("Hello")',output:"false"},{input:'isPalindrome("Madam")',output:"true"}],constraints:["String length: 1 ≤ n ≤ 10⁴","Only alphabetic characters"],testCases:[{input:["racecar"],expected:true},{input:["Hello"],expected:false},{input:["Madam"],expected:true},{input:["a"],expected:true},{input:["abba"],expected:true}],functionName:"isPalindrome"},
+  {id:3,title:"FizzBuzz Array",difficulty:"Easy",description:`Write a function <code>fizzBuzz(n)</code> that returns an array of strings from 1 to n where:<br>• Multiples of 3 → <code>"Fizz"</code><br>• Multiples of 5 → <code>"Buzz"</code><br>• Multiples of both → <code>"FizzBuzz"</code><br>• Others → number as string`,examples:[{input:"fizzBuzz(5)",output:'["1","2","Fizz","4","Buzz"]'},{input:"fizzBuzz(15)[14]",output:'"FizzBuzz"'}],constraints:["1 ≤ n ≤ 10⁴"],testCases:[{input:[5],expected:["1","2","Fizz","4","Buzz"]},{input:[1],expected:["1"]},{input:[3],expected:["1","2","Fizz"]},{input:[15],expected:["1","2","Fizz","4","Buzz","Fizz","7","8","Fizz","Buzz","11","Fizz","13","14","FizzBuzz"]},{input:[6],expected:["1","2","Fizz","4","Buzz","Fizz"]}],functionName:"fizzBuzz"},
+  {id:4,title:"Fibonacci Sequence",difficulty:"Medium",description:`Write a function <code>fibonacci(n)</code> that returns the <strong>nth Fibonacci number</strong> (0-indexed).<br>Sequence: 0, 1, 1, 2, 3, 5, 8, 13, ...`,examples:[{input:"fibonacci(0)",output:"0"},{input:"fibonacci(6)",output:"8"},{input:"fibonacci(10)",output:"55"}],constraints:["0 ≤ n ≤ 40"],testCases:[{input:[0],expected:0},{input:[1],expected:1},{input:[6],expected:8},{input:[10],expected:55},{input:[15],expected:610}],functionName:"fibonacci"},
+  {id:5,title:"Count Vowels",difficulty:"Easy",description:`Write a function <code>countVowels(str)</code> that counts the number of vowels (a,e,i,o,u) in a string. Case-insensitive.`,examples:[{input:'countVowels("Hello World")',output:"3"},{input:'countVowels("rhythm")',output:"0"},{input:'countVowels("AEIOU")',output:"5"}],constraints:["String length: 0 ≤ n ≤ 10⁵"],testCases:[{input:["Hello World"],expected:3},{input:["rhythm"],expected:0},{input:["AEIOU"],expected:5},{input:[""],expected:0},{input:["Programming"],expected:3}],functionName:"countVowels"},
+  {id:6,title:"Find Maximum",difficulty:"Easy",description:`Write a function <code>findMax(arr)</code> that finds and returns the maximum value in an array <strong>without using Math.max()</strong> or array sort methods.`,examples:[{input:"findMax([3,1,4,1,5,9,2,6])",output:"9"},{input:"findMax([-5,-1,-3])",output:"-1"},{input:"findMax([42])",output:"42"}],constraints:["Array length: 1 ≤ n ≤ 10⁵","Elements: -10⁹ ≤ arr[i] ≤ 10⁹"],testCases:[{input:[[3,1,4,1,5,9,2,6]],expected:9},{input:[[-5,-1,-3]],expected:-1},{input:[[42]],expected:42},{input:[[0,0,0]],expected:0},{input:[[100,200,150]],expected:200}],functionName:"findMax"},
+  {id:7,title:"Reverse Words",difficulty:"Medium",description:`Write a function <code>reverseWords(str)</code> that reverses the order of words in a sentence. Handle leading/trailing spaces.`,examples:[{input:'reverseWords("Hello World")',output:'"World Hello"'},{input:'reverseWords("  the sky is blue  ")',output:'"blue is sky the"'},{input:'reverseWords("JS is fun")',output:'"fun is JS"'}],constraints:["String length: 0 ≤ n ≤ 10⁴"],testCases:[{input:["Hello World"],expected:"World Hello"},{input:["  the sky is blue  "],expected:"blue is sky the"},{input:["JS is fun"],expected:"fun is JS"},{input:["a"],expected:"a"},{input:["one two three"],expected:"three two one"}],functionName:"reverseWords"},
+  {id:8,title:"Two Sum",difficulty:"Medium",description:`Write a function <code>twoSum(nums, target)</code> that returns the indices of two numbers adding to <code>target</code>. Return <code>[i, j]</code> where <code>i &lt; j</code>. Exactly one solution exists.`,examples:[{input:"twoSum([2,7,11,15], 9)",output:"[0,1]"},{input:"twoSum([3,2,4], 6)",output:"[1,2]"},{input:"twoSum([3,3], 6)",output:"[0,1]"}],constraints:["2 ≤ nums.length ≤ 10⁴","-10⁹ ≤ nums[i] ≤ 10⁹","Exactly one valid answer"],testCases:[{input:[[2,7,11,15],9],expected:[0,1]},{input:[[3,2,4],6],expected:[1,2]},{input:[[3,3],6],expected:[0,1]},{input:[[1,5,3,7],8],expected:[1,3]},{input:[[0,4,3,0],0],expected:[0,3]}],functionName:"twoSum"},
+  {id:9,title:"Flatten Array",difficulty:"Hard",description:`Write a function <code>flattenArray(arr)</code> that deeply flattens a nested array of any depth into a single-level array. <strong>Do not use Array.prototype.flat()</strong>.`,examples:[{input:"flattenArray([1,[2,[3,[4]],5]])",output:"[1,2,3,4,5]"},{input:"flattenArray([[1,2],[3,4]])",output:"[1,2,3,4]"},{input:"flattenArray([1,2,3])",output:"[1,2,3]"}],constraints:["Nesting depth: up to 10 levels","Total elements: up to 10⁴"],testCases:[{input:[[1,[2,[3,[4]],5]]],expected:[1,2,3,4,5]},{input:[[[1,2],[3,4]]],expected:[1,2,3,4]},{input:[[1,2,3]],expected:[1,2,3]},{input:[[[[[5]]]]],expected:[5]},{input:[[1,[2,3],[4,[5,6]]]],expected:[1,2,3,4,5,6]}],functionName:"flattenArray"},
+  {id:10,title:"Group Anagrams",difficulty:"Hard",description:`Write a function <code>groupAnagrams(strs)</code> that groups anagrams together. Return an array of groups. Order within groups and between groups does not matter.`,examples:[{input:'groupAnagrams(["eat","tea","tan","ate","nat","bat"])',output:'[["bat"],["nat","tan"],["ate","eat","tea"]]'},{input:'groupAnagrams([""])',output:'[[""]]'},{input:'groupAnagrams(["a"])',output:'[["a"]]'}],constraints:["1 ≤ strs.length ≤ 10⁴","0 ≤ strs[i].length ≤ 100","Lowercase letters only"],testCases:[{input:[["eat","tea","tan","ate","nat","bat"]],expected:[["bat"],["nat","tan"],["ate","eat","tea"]],isGroupAnagram:true},{input:[[""]], expected:[[""]], isGroupAnagram:true},{input:[["a"]],expected:[["a"]],isGroupAnagram:true},{input:[["abc","bca","cab","xyz"]],expected:[["abc","bca","cab"],["xyz"]],isGroupAnagram:true},{input:[["ab","ba","cd","dc","ef"]],expected:[["ab","ba"],["cd","dc"],["ef"]],isGroupAnagram:true}],functionName:"groupAnagrams"},
+];
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+let leaderboardData = {};   // {name: {name, results, updatedAt}}
+let questions = [];          // active question list
+let selectedQIdx = null;     // index in questions array
+let confirmCallback = null;
+
+/* ════════════════════════════════════════
+   STORAGE HELPERS  (localStorage fallback + JSONBin cloud)
+════════════════════════════════════════ */
+
+/* ── localStorage ── */
+function lbLoad() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; }
+}
+function lbSave(data) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+  if (bc) bc.postMessage({ type: 'lb_update', data });
+}
+function qLoad() {
+  try { const r = localStorage.getItem(LS_Q_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+}
+function qSave(qs) {
+  try { localStorage.setItem(LS_Q_KEY, JSON.stringify(qs)); } catch(e) {}
+  if (bc) bc.postMessage({ type: 'q_update', data: qs });
+}
+
+/* ── JSONBin Cloud Config ── */
+const CFG_KEY = 'anisoj_cloud_cfg_v1';
+
+function cfgLoad() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); } catch(e) { return null; }
+}
+function cfgSave(cfg) {
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch(e) {}
+}
+
+function isCloudReady() {
+  const c = cfgLoad();
+  return !!(c && c.apiKey && c.binId);
+}
+
+/* ── JSONBin API calls ── */
+async function cloudRead() {
+  const c = cfgLoad();
+  if (!c?.apiKey || !c?.binId) return null;
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${c.binId}/latest`, {
+      headers: { 'X-Master-Key': c.apiKey, 'X-Bin-Meta': 'false' }
+    });
+    if (!res.ok) throw new Error(res.status);
+    return await res.json();
+  } catch(e) { console.warn('CloudRead error:', e); return null; }
+}
+
+async function cloudWrite(data) {
+  const c = cfgLoad();
+  if (!c?.apiKey || !c?.binId) return false;
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${c.binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': c.apiKey
+      },
+      body: JSON.stringify(data)
+    });
+    return res.ok;
+  } catch(e) { console.warn('CloudWrite error:', e); return false; }
+}
+
+async function cloudCreateBin(apiKey) {
+  const res = await fetch('https://api.jsonbin.io/v3/b', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': apiKey,
+      'X-Bin-Name': 'AnisOJ-Leaderboard',
+      'X-Private': 'false'
+    },
+    body: JSON.stringify({ leaderboard: {}, questions: [], contestPw: '', createdAt: Date.now() })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const j = await res.json();
+  return j.metadata.id;
+}
+
+/* ── Merge cloud + local, cloud wins for other users ── */
+function mergeData(cloud, local) {
+  const merged = Object.assign({}, local);
+  Object.entries(cloud || {}).forEach(([k, v]) => {
+    if (!merged[k] || (v.updatedAt || 0) > (merged[k].updatedAt || 0)) {
+      merged[k] = v;
+    }
+  });
+  return merged;
+}
+
+/* ── Full cloud sync (read → merge → write) ── */
+let cloudSyncing = false;
+async function cloudSync(force = false) {
+  if (cloudSyncing) return;
+  if (!isCloudReady()) return;
+  cloudSyncing = true;
+  updateCloudStatusBadge('syncing');
+  try {
+    const remote = await cloudRead();
+    if (!remote) { updateCloudStatusBadge('error'); return; }
+
+    const localLb = lbLoad();
+    const mergedLb = mergeData(remote.leaderboard || {}, localLb);
+
+    /* If local has newer entries, push back to cloud */
+    const needPush = JSON.stringify(mergedLb) !== JSON.stringify(remote.leaderboard || {});
+    if (needPush || force) {
+      const payload = {
+        leaderboard: mergedLb,
+        questions: remote.questions || [],
+        contestPw: remote.contestPw || '',
+        updatedAt: Date.now()
+      };
+      await cloudWrite(payload);
+    }
+
+    /* Apply merged data */
+    try { localStorage.setItem(LS_KEY, JSON.stringify(mergedLb)); } catch(e) {}
+    leaderboardData = mergedLb;
+    renderLeaderboard();
+
+    /* Sync questions if cloud has them */
+    if (remote.questions && remote.questions.length > 0) {
+      try { localStorage.setItem(LS_Q_KEY, JSON.stringify(remote.questions)); } catch(e) {}
+    }
+
+    /* Sync contest password */
+    if (remote.contestPw !== undefined) {
+      try { localStorage.setItem(LS_PW_KEY, remote.contestPw); } catch(e) {}
+      renderPwPanel();
+    }
+
+    updateCloudStatusBadge('ok');
+    const now = new Date().toLocaleTimeString();
+    const el = document.getElementById('cloud-last-sync');
+    if (el) el.textContent = `Last synced: ${now}`;
+  } catch(e) {
+    updateCloudStatusBadge('error');
+  } finally {
+    cloudSyncing = false;
+  }
+}
+
+/* Push leaderboard + questions + pw to cloud (called after any save) */
+async function cloudPush() {
+  if (!isCloudReady()) return;
+  const payload = {
+    leaderboard: lbLoad(),
+    questions: qLoad() || [],
+    contestPw: pwLoad(),
+    updatedAt: Date.now()
+  };
+  await cloudWrite(payload);
+  updateCloudStatusBadge('ok');
+  const el = document.getElementById('cloud-last-sync');
+  if (el) el.textContent = `Last synced: ${new Date().toLocaleTimeString()}`;
+}
+
+function updateCloudStatusBadge(state) {
+  const badge = document.getElementById('cloud-status-badge');
+  if (!badge) return;
+  const map = {
+    ok:      ['var(--green-cell)', 'var(--green-bright)', 'var(--green-cell-border)', '<i class="fas fa-circle-check"></i> Connected'],
+    syncing: ['var(--bg3)', 'var(--accent)', 'var(--border)', '<i class="fas fa-rotate fa-spin"></i> Syncing...'],
+    error:   ['var(--red-cell)', 'var(--red-bright)', 'var(--red-cell-border)', '<i class="fas fa-triangle-exclamation"></i> Error'],
+    off:     ['var(--red-cell)', 'var(--red-bright)', 'var(--red-cell-border)', '<i class="fas fa-circle-xmark"></i> Not Connected'],
+  };
+  const [bg, color, border, html] = map[state] || map.off;
+  badge.style.background = bg;
+  badge.style.color = color;
+  badge.style.border = `1px solid ${border}`;
+  badge.innerHTML = html;
+}
+
+/* Also update sync status badge in header leaderboard panel */
+function updateSyncBar() {
+  const bar = document.querySelector('.sync-bar');
+  if (!bar) return;
+  if (isCloudReady()) {
+    bar.innerHTML = '<div class="sync-dot"></div> ☁ Cloud sync active — data visible on all devices';
+  } else {
+    bar.innerHTML = '<div class="sync-dot" style="background:var(--yellow);"></div> localStorage only — <a href="#" onclick="document.querySelector(\'[data-tab=setup]\').click();return false;" style="color:var(--accent);">Setup Cloud Sync</a>';
+  }
+}
+
+/* ── Cloud Setup UI handlers ── */
+function toggleCfgEye(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  ico.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+function loadCfgToForm() {
+  const c = cfgLoad();
+  if (c) {
+    document.getElementById('cfg-apikey').value = c.apiKey || '';
+    document.getElementById('cfg-binid').value  = c.binId  || '';
+  }
+  updateCloudStatusBadge(isCloudReady() ? 'ok' : 'off');
+}
+
+document.getElementById('btn-create-bin').onclick = async () => {
+  const key = document.getElementById('cfg-apikey').value.trim();
+  if (!key) return toast('API Key দিন আগে', 'error');
+  const btn = document.getElementById('btn-create-bin');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Creating...';
+  try {
+    const binId = await cloudCreateBin(key);
+    document.getElementById('cfg-binid').value = binId;
+    cfgSave({ apiKey: key, binId });
+    updateCloudStatusBadge('ok');
+    updateSyncBar();
+    toast('Bin তৈরি হয়েছে! Bin ID সেভ হয়েছে।', 'success');
+    await cloudPush();
+  } catch(e) {
+    toast('Error: ' + e.message + ' — API Key ঠিক আছে?', 'error');
+    updateCloudStatusBadge('error');
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus-circle"></i> Create New Bin';
+};
+
+document.getElementById('btn-save-cfg').onclick = async () => {
+  const key   = document.getElementById('cfg-apikey').value.trim();
+  const binId = document.getElementById('cfg-binid').value.trim();
+  if (!key)   return toast('API Key দিন', 'error');
+  if (!binId) return toast('Bin ID দিন, অথবা Create New Bin করুন', 'error');
+  cfgSave({ apiKey: key, binId });
+  updateCloudStatusBadge('syncing');
+  updateSyncBar();
+  toast('Config সেভ হয়েছে। Sync করছি...', 'info');
+  await cloudSync(true);
+};
+
+document.getElementById('btn-test-cfg').onclick = async () => {
+  const btn = document.getElementById('btn-test-cfg');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Testing...';
+  const data = await cloudRead();
+  if (data !== null) {
+    toast('সংযোগ সফল! Cloud ডেটা পাওয়া গেছে।', 'success');
+    updateCloudStatusBadge('ok');
+  } else {
+    toast('সংযোগ ব্যর্থ। API Key বা Bin ID চেক করুন।', 'error');
+    updateCloudStatusBadge('error');
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-wifi"></i> Test Connection';
+};
+
+document.getElementById('btn-clear-cfg').onclick = () => {
+  confirm('Cloud Config মুছবেন?', 'API Key ও Bin ID মুছে যাবে। localStorage তে ডেটা থাকবে।', 'Clear', () => {
+    localStorage.removeItem(CFG_KEY);
+    document.getElementById('cfg-apikey').value = '';
+    document.getElementById('cfg-binid').value = '';
+    updateCloudStatusBadge('off');
+    updateSyncBar();
+    toast('Cloud config মুছা হয়েছে।', 'success');
+  });
+};
+
+/* BroadcastChannel — live sync across tabs */
+const bc = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('anisoj_lb') : null;
+if (bc) {
+  bc.onmessage = (e) => {
+    if (e.data?.type === 'lb_update') { leaderboardData = e.data.data; renderLeaderboard(); }
+    if (e.data?.type === 'q_update')  { questions = e.data.data; renderQList(); updateQBadge(); }
+    if (e.data?.type === 'pw_update') { renderPwPanel(); }
+  };
+}
+
+/* Poll every 5s — cloud sync if ready, else localStorage */
+setInterval(async () => {
+  if (isCloudReady()) {
+    await cloudSync();
+  } else {
+    leaderboardData = lbLoad();
+    renderLeaderboard();
+  }
+}, 5000);
+
+/* ════════════════════════════════════════
+   THEME
+════════════════════════════════════════ */
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-icon').className = t === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+  localStorage.setItem('anisoj-theme', t);
+}
+document.getElementById('theme-btn').onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+};
+const savedTheme = localStorage.getItem('anisoj-theme');
+if (savedTheme) setTheme(savedTheme);
+
+/* ════════════════════════════════════════
+   TAB NAVIGATION
+════════════════════════════════════════ */
+document.querySelectorAll('.tab-nav-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  };
+});
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+function toast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success: 'check-circle', error: 'times-circle', info: 'info-circle' };
+  t.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'}"></i>${msg}`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+/* ════════════════════════════════════════
+   CONFIRM DIALOG
+════════════════════════════════════════ */
+function confirm(title, msg, okLabel, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok').textContent = okLabel || 'Confirm';
+  confirmCallback = cb;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+document.getElementById('confirm-cancel').onclick = () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  confirmCallback = null;
+};
+document.getElementById('confirm-ok').onclick = () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+};
+
+/* ════════════════════════════════════════
+   LEADERBOARD RENDERING
+════════════════════════════════════════ */
+function getTimeClass(seconds) {
+  if (seconds < 1800) return 't4';
+  if (seconds < 3600) return 't3';
+  if (seconds < 5400) return 't2';
+  return 't1';
+}
+
+function renderLeaderboard() {
+  const users = Object.values(leaderboardData);
+  users.sort((a, b) => {
+    const sa = Object.values(a.results || {}).filter(r => r?.status === 'ac').length;
+    const sb = Object.values(b.results || {}).filter(r => r?.status === 'ac').length;
+    if (sb !== sa) return sb - sa;
+    const ta = Object.values(a.results || {}).filter(r => r?.status === 'ac').reduce((s, r) => s + r.time, 0);
+    const tb = Object.values(b.results || {}).filter(r => r?.status === 'ac').reduce((s, r) => s + r.time, 0);
+    return ta - tb;
+  });
+
+  const totalQ = questions.length || 10;
+
+  /* Stats */
+  const totalSolves = users.reduce((s, u) => s + Object.values(u.results || {}).filter(r => r?.status === 'ac').length, 0);
+  const totalWrong  = users.reduce((s, u) => s + Object.values(u.results || {}).filter(r => r?.status === 'wa').length, 0);
+  document.getElementById('stat-participants').textContent = users.length;
+  document.getElementById('stat-solves').textContent = totalSolves;
+  document.getElementById('stat-wrong').textContent = totalWrong;
+  document.getElementById('stat-top').textContent = users.length ? users[0].name : '—';
+  document.getElementById('lb-count-badge').textContent = users.length;
+
+  /* Header row */
+  let hdr = `<tr><th>Rank</th><th style="text-align:left">User</th>`;
+  for (let i = 1; i <= totalQ; i++) {
+    const q = questions[i - 1];
+    hdr += `<th title="${q ? q.title : 'Q' + i}">Q${i}</th>`;
+  }
+  hdr += `<th>Score</th><th>Actions</th></tr>`;
+  document.getElementById('lb-thead').innerHTML = hdr;
+
+  /* Rows */
+  const rows = users.map((u, idx) => {
+    const rank = idx + 1;
+    const rankBadge = `<span class="rank-badge${rank <= 3 ? ' rank-' + rank : ''}">${rank}</span>`;
+    let cells = '';
+    for (let i = 1; i <= totalQ; i++) {
+      const r = u.results?.[i] ?? u.results?.[String(i)];
+      if (!r) {
+        cells += `<td><span class="lb-cell">—</span></td>`;
+      } else if (r.status === 'ac') {
+        const tc = getTimeClass(r.time);
+        const mins = Math.floor(r.time / 60);
+        cells += `<td title="${mins}m solved"><span class="lb-cell correct ${tc}">✓</span></td>`;
+      } else {
+        cells += `<td title="${r.attempts} attempt(s)"><span class="lb-cell wrong">✗</span></td>`;
+      }
+    }
+    const score = Object.values(u.results || {}).filter(r => r?.status === 'ac').length;
+    return `<tr>
+      <td><span class="rank-badge${rank<=3?' rank-'+rank:''}">${rank}</span></td>
+      <td><span class="user-name">${escHtml(u.name)}</span></td>
+      ${cells}
+      <td><span class="score-badge">${score}/${totalQ}</span></td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${escHtml(u.name)}')">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('lb-tbody').innerHTML = rows.length
+    ? rows.join('')
+    : `<tr><td colspan="${totalQ + 4}" style="padding:30px;text-align:center;color:var(--text3);">
+        <i class="fas fa-users-slash" style="margin-right:8px;"></i>No participants yet
+      </td></tr>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════
+   DELETE USER
+════════════════════════════════════════ */
+function deleteUser(name) {
+  confirm(
+    'Delete User',
+    `Remove "${name}" from the leaderboard? This cannot be undone. index.html will no longer show this user.`,
+    'Delete User',
+    () => {
+      const data = lbLoad();
+      delete data[name];
+      lbSave(data);
+      leaderboardData = data;
+      renderLeaderboard();
+      toast(`User "${name}" deleted from leaderboard.`, 'success');
+    }
+  );
+}
+
+/* CLEAR ALL */
+document.getElementById('btn-clear-all').onclick = () => {
+  confirm(
+    'Clear All Leaderboard Data',
+    'This will permanently delete ALL user data from the leaderboard. index.html will show an empty board. This cannot be undone.',
+    'Clear Everything',
+    () => {
+      lbSave({});
+      leaderboardData = {};
+      renderLeaderboard();
+      toast('All leaderboard data cleared.', 'success');
+    }
+  );
+};
+
+/* REFRESH */
+document.getElementById('btn-refresh').onclick = () => {
+  leaderboardData = lbLoad();
+  renderLeaderboard();
+  toast('Leaderboard refreshed.', 'info');
+};
+
+/* ════════════════════════════════════════
+   QUESTIONS
+════════════════════════════════════════ */
+function loadQuestions() {
+  const stored = qLoad();
+  questions = stored ? stored : JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+}
+
+function updateQBadge() {
+  document.getElementById('q-count-badge').textContent = questions.length;
+}
+
+function renderQList() {
+  const list = document.getElementById('q-list-admin');
+  list.innerHTML = '';
+  questions.forEach((q, idx) => {
+    const item = document.createElement('div');
+    item.className = 'q-admin-item' + (selectedQIdx === idx ? ' selected' : '');
+    item.innerHTML = `
+      <div class="q-num-badge">${idx + 1}</div>
+      <span class="q-admin-title">${escHtml(q.title)}</span>
+      <span class="diff-badge diff-${q.difficulty}">${q.difficulty}</span>
+    `;
+    item.onclick = () => selectQuestion(idx);
+    list.appendChild(item);
+  });
+}
+
+function selectQuestion(idx) {
+  selectedQIdx = idx;
+  renderQList();
+  renderQEditor(questions[idx]);
+  document.getElementById('q-editor-actions').style.display = 'flex';
+}
+
+function renderQEditor(q) {
+  const wrap = document.getElementById('q-editor-wrap');
+
+  // Build test case HTML
+  let tcHtml = '';
+  (q.testCases || []).forEach((tc, i) => {
+    tcHtml += `
+    <div class="tc-item" id="tc-item-${i}">
+      <div class="tc-num">${i+1}</div>
+      <div class="tc-fields">
+        <div class="tc-label">Input (JSON array of args)</div>
+        <input class="tc-input" id="tc-input-${i}" value="${escAttr(JSON.stringify(tc.input))}" placeholder='e.g. [[1,2,3]]'/>
+        <div class="tc-label" style="margin-top:4px;">Expected Output (JSON)</div>
+        <input class="tc-input" id="tc-expected-${i}" value="${escAttr(JSON.stringify(tc.expected))}" placeholder='e.g. 6'/>
+        ${tc.isGroupAnagram ? `<div class="tc-label" style="color:var(--yellow);margin-top:4px;"><i class="fas fa-triangle-exclamation"></i> Group Anagram Mode</div>` : ''}
+      </div>
+      <button class="tc-remove" onclick="removeTc(${i})" title="Remove test case"><i class="fas fa-xmark"></i></button>
+    </div>`;
+  });
+
+  let exHtml = '';
+  (q.examples || []).forEach((ex, i) => {
+    exHtml += `
+    <div class="tc-item" id="ex-item-${i}">
+      <div class="tc-num">${i+1}</div>
+      <div class="tc-fields">
+        <div class="tc-label">Input</div>
+        <input class="tc-input" id="ex-input-${i}" value="${escAttr(ex.input)}" placeholder='e.g. arraySum([1,2,3])'/>
+        <div class="tc-label" style="margin-top:4px;">Output</div>
+        <input class="tc-input" id="ex-output-${i}" value="${escAttr(ex.output)}" placeholder='e.g. 6'/>
+      </div>
+      <button class="tc-remove" onclick="removeEx(${i})" title="Remove example"><i class="fas fa-xmark"></i></button>
+    </div>`;
+  });
+
+  wrap.innerHTML = `
+  <div class="form-wrap">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Question Title</label>
+        <input class="form-input" id="qe-title" value="${escAttr(q.title)}" placeholder="e.g. Array Sum"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Difficulty</label>
+        <select class="form-select" id="qe-diff">
+          <option value="Easy" ${q.difficulty==='Easy'?'selected':''}>Easy</option>
+          <option value="Medium" ${q.difficulty==='Medium'?'selected':''}>Medium</option>
+          <option value="Hard" ${q.difficulty==='Hard'?'selected':''}>Hard</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Function Name</label>
+      <input class="form-input" id="qe-fn" value="${escAttr(q.functionName)}" placeholder="e.g. arraySum"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description (HTML allowed)</label>
+      <textarea class="form-textarea" id="qe-desc" style="min-height:100px;">${escHtml(q.description)}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Constraints (one per line)</label>
+      <textarea class="form-textarea" id="qe-constraints" style="min-height:60px;">${(q.constraints||[]).join('\n')}</textarea>
+    </div>
+
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="form-label" style="margin:0;">Examples</label>
+        <button class="btn btn-ghost btn-sm" onclick="addExample()"><i class="fas fa-plus"></i> Add Example</button>
+      </div>
+      <div class="tc-editor" id="ex-editor">${exHtml}</div>
+    </div>
+
+    <div class="form-group">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <label class="form-label" style="margin:0;">Test Cases (hidden from users)</label>
+        <button class="btn btn-ghost btn-sm" onclick="addTc()"><i class="fas fa-plus"></i> Add Test Case</button>
+      </div>
+      <div class="tc-editor" id="tc-editor">${tcHtml}</div>
+    </div>
+  </div>`;
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ADD / REMOVE test cases */
+function addTc() {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.testCases = q.testCases || [];
+  q.testCases.push({ input: [], expected: null });
+  renderQEditor(q);
+}
+function removeTc(idx) {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.testCases.splice(idx, 1);
+  // collect current form values first
+  collectFormToQ();
+  renderQEditor(questions[selectedQIdx]);
+}
+function addExample() {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.examples = q.examples || [];
+  q.examples.push({ input: '', output: '' });
+  renderQEditor(q);
+}
+function removeEx(idx) {
+  if (selectedQIdx === null) return;
+  collectFormToQ();
+  questions[selectedQIdx].examples.splice(idx, 1);
+  renderQEditor(questions[selectedQIdx]);
+}
+
+/* Read form back into questions[selectedQIdx] */
+function collectFormToQ() {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  q.title       = document.getElementById('qe-title')?.value.trim() || q.title;
+  q.difficulty  = document.getElementById('qe-diff')?.value || q.difficulty;
+  q.functionName= document.getElementById('qe-fn')?.value.trim() || q.functionName;
+  q.description = document.getElementById('qe-desc')?.value || q.description;
+  q.constraints = (document.getElementById('qe-constraints')?.value || '').split('\n').filter(s => s.trim());
+
+  // examples
+  const exEditor = document.getElementById('ex-editor');
+  if (exEditor) {
+    const exItems = exEditor.querySelectorAll('.tc-item');
+    q.examples = Array.from(exItems).map((_, i) => ({
+      input:  document.getElementById(`ex-input-${i}`)?.value || '',
+      output: document.getElementById(`ex-output-${i}`)?.value || '',
+    }));
+  }
+
+  // test cases
+  const tcEditor = document.getElementById('tc-editor');
+  if (tcEditor) {
+    const tcItems = tcEditor.querySelectorAll('.tc-item');
+    q.testCases = Array.from(tcItems).map((_, i) => {
+      let inp, exp;
+      try { inp = JSON.parse(document.getElementById(`tc-input-${i}`)?.value || '[]'); } catch(e) { inp = []; }
+      try { exp = JSON.parse(document.getElementById(`tc-expected-${i}`)?.value ?? 'null'); } catch(e) { exp = null; }
+      return { input: inp, expected: exp };
+    });
+  }
+}
+
+/* SAVE question */
+document.getElementById('btn-save-q').onclick = () => {
+  if (selectedQIdx === null) return;
+  collectFormToQ();
+  qSave(questions);
+  renderQList();
+  updateQBadge();
+  toast('Question saved! index.html will pick up changes.', 'success');
+};
+
+/* DELETE question */
+document.getElementById('btn-delete-q').onclick = () => {
+  if (selectedQIdx === null) return;
+  const q = questions[selectedQIdx];
+  confirm(
+    'Delete Question',
+    `Delete "${q.title}"? This will remove it from the contest in index.html.`,
+    'Delete Question',
+    () => {
+      questions.splice(selectedQIdx, 1);
+      // re-number IDs
+      questions.forEach((q, i) => { q.id = i + 1; });
+      qSave(questions);
+      selectedQIdx = null;
+      renderQList();
+      updateQBadge();
+      document.getElementById('q-editor-wrap').innerHTML = `<div class="empty-state"><i class="fas fa-pen-to-square"></i><p>Question deleted. Select another or add new.</p></div>`;
+      document.getElementById('q-editor-actions').style.display = 'none';
+      toast('Question deleted.', 'success');
+    }
+  );
+};
+
+/* ADD NEW question */
+document.getElementById('btn-add-q').onclick = () => {
+  const newQ = {
+    id: questions.length + 1,
+    title: 'New Question',
+    difficulty: 'Easy',
+    functionName: 'solve',
+    description: 'Write a function <code>solve()</code> that...',
+    examples: [{ input: 'solve()', output: 'result' }],
+    constraints: ['1 ≤ n ≤ 100'],
+    testCases: [{ input: [], expected: null }],
+  };
+  questions.push(newQ);
+  selectedQIdx = questions.length - 1;
+  qSave(questions);
+  renderQList();
+  updateQBadge();
+  renderQEditor(newQ);
+  document.getElementById('q-editor-actions').style.display = 'flex';
+  toast('New question created. Fill in the details and save.', 'info');
+};
+
+/* ════════════════════════════════════════
+   CONTEST PASSWORD
+════════════════════════════════════════ */
+function pwLoad() {
+  try { return localStorage.getItem(LS_PW_KEY) || ''; } catch(e) { return ''; }
+}
+function pwSave(pw) {
+  try {
+    if (pw) localStorage.setItem(LS_PW_KEY, pw);
+    else localStorage.removeItem(LS_PW_KEY);
+  } catch(e) {}
+  if (bc) bc.postMessage({ type: 'pw_update', data: pw });
+}
+
+function renderPwPanel() {
+  const pw = pwLoad();
+  const badge   = document.getElementById('pw-status-badge');
+  const wrap    = document.getElementById('pw-current-wrap');
+  const display = document.getElementById('pw-display');
+  const label   = document.getElementById('pw-set-label');
+
+  if (pw) {
+    badge.innerHTML  = '<i class="fas fa-circle-check"></i> Active';
+    badge.style.background = 'var(--green-cell)';
+    badge.style.color      = 'var(--green-bright)';
+    badge.style.border     = '1px solid var(--green-cell-border)';
+    display.textContent    = pw;
+    wrap.style.display     = 'block';
+    label.textContent      = 'Change Password';
+  } else {
+    badge.innerHTML  = '<i class="fas fa-circle-xmark"></i> Not Set';
+    badge.style.background = 'var(--red-cell)';
+    badge.style.color      = 'var(--red-bright)';
+    badge.style.border     = '1px solid var(--red-cell-border)';
+    wrap.style.display     = 'none';
+    label.textContent      = 'Set Contest Password';
+  }
+}
+
+/* Save password */
+document.getElementById('btn-set-pw').onclick = () => {
+  const val = document.getElementById('pw-input').value.trim();
+  if (!val) return toast('Enter a password first.', 'error');
+  if (val.length < 3) return toast('Password must be at least 3 characters.', 'error');
+  pwSave(val);
+  document.getElementById('pw-input').value = '';
+  renderPwPanel();
+  toast('Contest password saved! Participants can now join with it.', 'success');
+};
+
+/* Enter key on input */
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-set-pw').click();
+});
+
+/* Toggle show/hide */
+document.getElementById('btn-pw-toggle').onclick = () => {
+  const inp  = document.getElementById('pw-input');
+  const icon = document.getElementById('pw-eye-icon');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    inp.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+};
+
+/* Generate random password */
+document.getElementById('btn-gen-pw').onclick = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+  let pw = '';
+  for (let i = 0; i < 8; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  const inp = document.getElementById('pw-input');
+  inp.value = pw;
+  inp.type  = 'text';
+  document.getElementById('pw-eye-icon').className = 'fas fa-eye-slash';
+  toast('Random password generated — click Save to apply.', 'info');
+};
+
+/* Remove password */
+document.getElementById('btn-remove-pw').onclick = () => {
+  const cur = pwLoad();
+  if (!cur) return toast('No password is currently set.', 'info');
+  confirm(
+    'Remove Contest Password',
+    'This will allow anyone to join the contest without a password. Are you sure?',
+    'Remove Password',
+    () => {
+      pwSave('');
+      renderPwPanel();
+      toast('Contest password removed. Contest is now open to all.', 'success');
+    }
+  );
+};
+
+/* Copy password to clipboard */
+document.getElementById('btn-copy-pw').onclick = () => {
+  const pw = pwLoad();
+  if (!pw) return;
+  navigator.clipboard.writeText(pw).then(() => {
+    toast('Password copied to clipboard!', 'success');
+  }).catch(() => {
+    /* fallback */
+    const el = document.createElement('textarea');
+    el.value = pw;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    el.remove();
+    toast('Password copied!', 'success');
+  });
+};
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+loadQuestions();
+leaderboardData = lbLoad();
+renderLeaderboard();
+renderQList();
+updateQBadge();
+renderPwPanel();
+loadCfgToForm();
+updateSyncBar();
+/* Initial cloud pull */
+if (isCloudReady()) cloudSync(false);
+</script>
+
+<!-- ═══ ADMIN LOGIN GATE ═══ -->
+<script>
+(function () {
+  const SESSION_KEY = 'AnisOJ_admin_session';
+  const USERS = [
+    { user: 'QWRtaW4=', pass: 'QW5pc3VyMzU1MjMyMDBAQW5pcw==' }
+  ];
+  function b64(v) { return atob(v); }
+
+  if (localStorage.getItem(SESSION_KEY) === 'true') {
+    /* ── Already logged in: inject Logout button ── */
+    const headerRight = document.querySelector('.header-right');
+    if (headerRight) {
+      const btn = document.createElement('button');
+      btn.innerHTML = '<i class="fas fa-sign-out-alt" style="margin-right:5px;"></i>Logout';
+      btn.style.cssText =
+        'margin-left:8px;padding:5px 14px;background:var(--red);color:#fff;' +
+        'border:none;cursor:pointer;border-radius:var(--radius-sm);font-family:var(--font);' +
+        'font-size:0.75rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:.18s;';
+      btn.onmouseover = () => btn.style.background = 'var(--red-bright)';
+      btn.onmouseout  = () => btn.style.background = 'var(--red)';
+      btn.onclick = () => {
+        localStorage.removeItem(SESSION_KEY);
+        location.reload();
+      };
+      headerRight.appendChild(btn);
+    }
+    return; /* let the page run normally */
+  }
+
+  /* ── Not logged in: build full-screen login overlay ── */
+  document.body.style.overflow = 'hidden';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'login-overlay';
+  overlay.style.cssText =
+    'position:fixed;inset:0;background:rgba(13,17,23,0.97);' +
+    'display:flex;align-items:center;justify-content:center;z-index:99999;' +
+    'font-family:"JetBrains Mono",monospace;';
+
+  overlay.innerHTML = `
+    <div style="
+      background:var(--bg2,#161b22);
+      border:1px solid var(--border,#30363d);
+      border-radius:12px;
+      padding:40px 36px 32px;
+      width:340px;
+      box-shadow:0 8px 40px rgba(0,0,0,0.6);
+      text-align:center;
+    ">
+      <!-- Logo -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px;">
+        <div style="
+          width:38px;height:38px;border-radius:9px;
+          background:linear-gradient(135deg,#f97316,#da3633);
+          display:flex;align-items:center;justify-content:center;
+          font-size:1rem;color:#fff;
+        "><i class="fas fa-shield-halved"></i></div>
+        <span style="font-size:1.2rem;font-weight:700;color:var(--text,#e6edf3);">
+          Anis<span style="color:#f97316;">OJ</span>
+        </span>
+      </div>
+
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+                  color:var(--text3,#6e7681);margin-bottom:20px;">
+        <i class="fas fa-user-gear" style="margin-right:6px;color:#f97316;"></i>Admin Login
+      </div>
+
+      <!-- Username -->
+      <div style="margin-bottom:12px;text-align:left;">
+        <label style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                      color:var(--text2,#8b949e);display:block;margin-bottom:6px;">
+          Username
+        </label>
+        <input id="login-user" type="text" placeholder="Enter username"
+          autocomplete="username"
+          style="
+            font-family:inherit;font-size:0.82rem;width:100%;
+            background:var(--bg3,#1c2128);border:1px solid var(--border,#30363d);
+            color:var(--text,#e6edf3);border-radius:6px;padding:9px 12px;outline:none;
+            transition:border-color .15s;box-sizing:border-box;
+          "
+          onfocus="this.style.borderColor='var(--accent,#58a6ff)'"
+          onblur="this.style.borderColor='var(--border,#30363d)'"
+        />
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom:20px;text-align:left;">
+        <label style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                      color:var(--text2,#8b949e);display:block;margin-bottom:6px;">
+          Password
+        </label>
+        <div style="position:relative;">
+          <input id="login-pass" type="password" placeholder="Enter password"
+            autocomplete="current-password"
+            style="
+              font-family:inherit;font-size:0.82rem;width:100%;
+              background:var(--bg3,#1c2128);border:1px solid var(--border,#30363d);
+              color:var(--text,#e6edf3);border-radius:6px;padding:9px 38px 9px 12px;
+              outline:none;transition:border-color .15s;box-sizing:border-box;
+            "
+            onfocus="this.style.borderColor='var(--accent,#58a6ff)'"
+            onblur="this.style.borderColor='var(--border,#30363d)'"
+          />
+          <button id="login-eye"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                   background:none;border:none;color:var(--text3,#6e7681);cursor:pointer;font-size:0.85rem;"
+            title="Show/hide password">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div id="login-err"
+        style="font-size:0.75rem;color:#f85149;min-height:18px;margin-bottom:14px;display:none;">
+        <i class="fas fa-circle-xmark" style="margin-right:4px;"></i>Incorrect username or password.
+      </div>
+
+      <!-- Login button -->
+      <button id="login-btn"
+        style="
+          width:100%;padding:10px;
+          background:linear-gradient(135deg,#f97316,#da3633);
+          color:#fff;border:none;cursor:pointer;
+          border-radius:6px;font-family:inherit;font-size:0.82rem;font-weight:700;
+          letter-spacing:.5px;transition:filter .18s;
+          display:flex;align-items:center;justify-content:center;gap:8px;
+        "
+        onmouseover="this.style.filter='brightness(1.12)'"
+        onmouseout="this.style.filter='brightness(1)'">
+        <i class="fas fa-right-to-bracket"></i> Login
+      </button>
+
+      <div style="margin-top:16px;font-size:0.68rem;color:var(--text3,#6e7681);">
+        Admin access only &mdash; AnisOJ
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  /* Toggle show/hide password */
+  document.getElementById('login-eye').addEventListener('click', () => {
+    const inp  = document.getElementById('login-pass');
+    const icon = document.getElementById('login-eye').querySelector('i');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'fas fa-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'fas fa-eye';
+    }
+  });
+
+  /* Login logic */
+  function attemptLogin() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
+    const err = document.getElementById('login-err');
+    const valid = USERS.find(acc => u === b64(acc.user) && p === b64(acc.pass));
+    if (valid) {
+      localStorage.setItem(SESSION_KEY, 'true');
+      overlay.style.transition = 'opacity .3s';
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.remove();
+        document.body.style.overflow = '';
+        /* Add logout button after successful login */
+        const headerRight = document.querySelector('.header-right');
+        if (headerRight) {
+          const btn = document.createElement('button');
+          btn.innerHTML = '<i class="fas fa-sign-out-alt" style="margin-right:5px;"></i>Logout';
+          btn.style.cssText =
+            'margin-left:8px;padding:5px 14px;background:var(--red);color:#fff;' +
+            'border:none;cursor:pointer;border-radius:var(--radius-sm);font-family:var(--font);' +
+            'font-size:0.75rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:.18s;';
+          btn.onmouseover = () => btn.style.background = 'var(--red-bright)';
+          btn.onmouseout  = () => btn.style.background = 'var(--red)';
+          btn.onclick = () => {
+            localStorage.removeItem(SESSION_KEY);
+            location.reload();
+          };
+          headerRight.appendChild(btn);
+        }
+      }, 300);
+    } else {
+      err.style.display = 'block';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+      /* Shake animation */
+      const box = overlay.querySelector('div > div');
+      box.style.transition = 'transform .08s';
+      [0,1,2,3].reduce((p, i) =>
+        p.then(() => new Promise(r => {
+          box.style.transform = i % 2 ? 'translateX(6px)' : 'translateX(-6px)';
+          setTimeout(r, 80);
+        }))
+      , Promise.resolve()).then(() => { box.style.transform = ''; });
+    }
+  }
+
+  document.getElementById('login-btn').addEventListener('click', attemptLogin);
+  /* Enter key on both fields triggers login */
+  ['login-user','login-pass'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') attemptLogin();
+    })
+  );
+
+})();
+</script>
+
+</body>
+</html>
