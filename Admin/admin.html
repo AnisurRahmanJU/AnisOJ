@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AnisOJ - Admin Panel</title>
+<title>AnisOJ — Admin Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -15,7 +15,7 @@
 <header id="header">
   <div class="logo">
     <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
-     <span>AnisOJ</span> &nbsp;Admin
+    JS <span>AnisOJ</span> &nbsp;Admin
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
     <span class="admin-badge"><i class="fas fa-user-gear" style="margin-right:5px;"></i>Admin Panel</span>
@@ -340,6 +340,220 @@
 
 <!-- TOAST -->
 <div id="toast-container"></div>
+
+<!-- ═══ ADMIN LOGIN GATE ═══ -->
+<script>
+(function () {
+  const SESSION_KEY = 'AnisOJ_admin_session';
+  const USERS = [
+    { user: 'QWRtaW4=', pass: 'QW5pc3VyMzU1MjMyMDBAQW5pcw==' }
+  ];
+  function b64(v) { return atob(v); }
+
+  if (localStorage.getItem(SESSION_KEY) === 'true') {
+    /* ── Already logged in: inject Logout button ── */
+    const headerRight = document.querySelector('.header-right');
+    if (headerRight) {
+      const btn = document.createElement('button');
+      btn.innerHTML = '<i class="fas fa-sign-out-alt" style="margin-right:5px;"></i>Logout';
+      btn.style.cssText =
+        'margin-left:8px;padding:5px 14px;background:var(--red);color:#fff;' +
+        'border:none;cursor:pointer;border-radius:var(--radius-sm);font-family:var(--font);' +
+        'font-size:0.75rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:.18s;';
+      btn.onmouseover = () => btn.style.background = 'var(--red-bright)';
+      btn.onmouseout  = () => btn.style.background = 'var(--red)';
+      btn.onclick = () => {
+        localStorage.removeItem(SESSION_KEY);
+        location.reload();
+      };
+      headerRight.appendChild(btn);
+    }
+    return; /* let the page run normally */
+  }
+
+  /* ── Not logged in: build full-screen login overlay ── */
+  document.body.style.overflow = 'hidden';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'login-overlay';
+  overlay.style.cssText =
+    'position:fixed;inset:0;background:rgba(13,17,23,0.97);' +
+    'display:flex;align-items:center;justify-content:center;z-index:99999;' +
+    'font-family:"JetBrains Mono",monospace;';
+
+  overlay.innerHTML = `
+    <div style="
+      background:var(--bg2,#161b22);
+      border:1px solid var(--border,#30363d);
+      border-radius:12px;
+      padding:40px 36px 32px;
+      width:340px;
+      box-shadow:0 8px 40px rgba(0,0,0,0.6);
+      text-align:center;
+    ">
+      <!-- Logo -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px;">
+        <div style="
+          width:38px;height:38px;border-radius:9px;
+          background:linear-gradient(135deg,#f97316,#da3633);
+          display:flex;align-items:center;justify-content:center;
+          font-size:1rem;color:#fff;
+        "><i class="fas fa-shield-halved"></i></div>
+        <span style="font-size:1.2rem;font-weight:700;color:var(--text,#e6edf3);">
+          Anis<span style="color:#f97316;">OJ</span>
+        </span>
+      </div>
+
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+                  color:var(--text3,#6e7681);margin-bottom:20px;">
+        <i class="fas fa-user-gear" style="margin-right:6px;color:#f97316;"></i>Admin Login
+      </div>
+
+      <!-- Username -->
+      <div style="margin-bottom:12px;text-align:left;">
+        <label style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                      color:var(--text2,#8b949e);display:block;margin-bottom:6px;">
+          Username
+        </label>
+        <input id="login-user" type="text" placeholder="Enter username"
+          autocomplete="username"
+          style="
+            font-family:inherit;font-size:0.82rem;width:100%;
+            background:var(--bg3,#1c2128);border:1px solid var(--border,#30363d);
+            color:var(--text,#e6edf3);border-radius:6px;padding:9px 12px;outline:none;
+            transition:border-color .15s;box-sizing:border-box;
+          "
+          onfocus="this.style.borderColor='var(--accent,#58a6ff)'"
+          onblur="this.style.borderColor='var(--border,#30363d)'"
+        />
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom:20px;text-align:left;">
+        <label style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                      color:var(--text2,#8b949e);display:block;margin-bottom:6px;">
+          Password
+        </label>
+        <div style="position:relative;">
+          <input id="login-pass" type="password" placeholder="Enter password"
+            autocomplete="current-password"
+            style="
+              font-family:inherit;font-size:0.82rem;width:100%;
+              background:var(--bg3,#1c2128);border:1px solid var(--border,#30363d);
+              color:var(--text,#e6edf3);border-radius:6px;padding:9px 38px 9px 12px;
+              outline:none;transition:border-color .15s;box-sizing:border-box;
+            "
+            onfocus="this.style.borderColor='var(--accent,#58a6ff)'"
+            onblur="this.style.borderColor='var(--border,#30363d)'"
+          />
+          <button id="login-eye"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                   background:none;border:none;color:var(--text3,#6e7681);cursor:pointer;font-size:0.85rem;"
+            title="Show/hide password">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div id="login-err"
+        style="font-size:0.75rem;color:#f85149;min-height:18px;margin-bottom:14px;display:none;">
+        <i class="fas fa-circle-xmark" style="margin-right:4px;"></i>Incorrect username or password.
+      </div>
+
+      <!-- Login button -->
+      <button id="login-btn"
+        style="
+          width:100%;padding:10px;
+          background:linear-gradient(135deg,#f97316,#da3633);
+          color:#fff;border:none;cursor:pointer;
+          border-radius:6px;font-family:inherit;font-size:0.82rem;font-weight:700;
+          letter-spacing:.5px;transition:filter .18s;
+          display:flex;align-items:center;justify-content:center;gap:8px;
+        "
+        onmouseover="this.style.filter='brightness(1.12)'"
+        onmouseout="this.style.filter='brightness(1)'">
+        <i class="fas fa-right-to-bracket"></i> Login
+      </button>
+
+      <div style="margin-top:16px;font-size:0.68rem;color:var(--text3,#6e7681);">
+        Admin access only &mdash; AnisOJ
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  /* Toggle show/hide password */
+  document.getElementById('login-eye').addEventListener('click', () => {
+    const inp  = document.getElementById('login-pass');
+    const icon = document.getElementById('login-eye').querySelector('i');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'fas fa-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'fas fa-eye';
+    }
+  });
+
+  /* Login logic */
+  function attemptLogin() {
+    const u = document.getElementById('login-user').value.trim();
+    const p = document.getElementById('login-pass').value;
+    const err = document.getElementById('login-err');
+    const valid = USERS.find(acc => u === b64(acc.user) && p === b64(acc.pass));
+    if (valid) {
+      localStorage.setItem(SESSION_KEY, 'true');
+      overlay.style.transition = 'opacity .3s';
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.remove();
+        document.body.style.overflow = '';
+        /* Add logout button after successful login */
+        const headerRight = document.querySelector('.header-right');
+        if (headerRight) {
+          const btn = document.createElement('button');
+          btn.innerHTML = '<i class="fas fa-sign-out-alt" style="margin-right:5px;"></i>Logout';
+          btn.style.cssText =
+            'margin-left:8px;padding:5px 14px;background:var(--red);color:#fff;' +
+            'border:none;cursor:pointer;border-radius:var(--radius-sm);font-family:var(--font);' +
+            'font-size:0.75rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:.18s;';
+          btn.onmouseover = () => btn.style.background = 'var(--red-bright)';
+          btn.onmouseout  = () => btn.style.background = 'var(--red)';
+          btn.onclick = () => {
+            localStorage.removeItem(SESSION_KEY);
+            location.reload();
+          };
+          headerRight.appendChild(btn);
+        }
+      }, 300);
+    } else {
+      err.style.display = 'block';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+      /* Shake animation */
+      const box = overlay.querySelector('div > div');
+      box.style.transition = 'transform .08s';
+      [0,1,2,3].reduce((p, i) =>
+        p.then(() => new Promise(r => {
+          box.style.transform = i % 2 ? 'translateX(6px)' : 'translateX(-6px)';
+          setTimeout(r, 80);
+        }))
+      , Promise.resolve()).then(() => { box.style.transform = ''; });
+    }
+  }
+
+  document.getElementById('login-btn').addEventListener('click', attemptLogin);
+  /* Enter key on both fields triggers login */
+  ['login-user','login-pass'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') attemptLogin();
+    })
+  );
+
+})();
+</script>
 <script src="script.js"></script>
 </body>
 </html>
